@@ -35,6 +35,7 @@ export const SignupForm = ({
             value={fullname}
             onChange={(e) => setFullname(e.target.value)}
             isRequired={true}
+            autoComplete="off"
           />
           <Input
             type={'email'}
@@ -42,6 +43,7 @@ export const SignupForm = ({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             isRequired={true}
+            autoComplete="off"
           />
           <Input
             type={'password'}
@@ -49,6 +51,7 @@ export const SignupForm = ({
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             isRequired={true}
+            autoComplete="new-password"
           />
 
           <div className="flex justify-center">

@@ -7,6 +7,7 @@ interface InputProperties {
   value: string;
   onChange: ChangeEventHandler<HTMLInputElement>;
   isRequired?: boolean;
+  autoComplete?: string;
 }
 
 export const Input = ({
@@ -15,6 +16,7 @@ export const Input = ({
   value,
   onChange,
   isRequired = false,
+  autoComplete,
 }: InputProperties) => {
   const [isFocused, setIsFocused] = useState(false);
   const shouldFloat = isFocused || value.length > 0;
@@ -48,6 +50,7 @@ export const Input = ({
           onBlur={() => setIsFocused(false)}
           required={isRequired}
           placeholder={placeholder}
+          autoComplete={autoComplete}
           className="w-full px-4 pt-5 pb-2 bg-transparent text-gray-700 placeholder-transparent rounded-xl focus:outline-none"
         />
       </div>

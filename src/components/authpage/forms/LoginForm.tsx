@@ -31,6 +31,7 @@ export const LoginForm = ({
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             isRequired={true}
+            autoComplete="off"
           />
           <Input
             type={'password'}
@@ -38,6 +39,7 @@ export const LoginForm = ({
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             isRequired={true}
+            autoComplete="off"
           />
 
           <div className="flex justify-center">

@@ -5,11 +5,14 @@ import Head from 'next/head';
 import { BackgroundImage } from '@/components/BackgroundImage';
 import { Toast, ToastStateProps } from '@/components/ui/Toast';
 import { SearchParamHandler } from './SeatchParamHandler';
+import { Sidebar, TabType } from '@/components/home/Sidebar';
 
 export default function Home() {
   const [role, setRole] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('home');
   const [toast, setToast] = useState<ToastStateProps | null>(null);
   const router = useRouter();
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedRole = localStorage.getItem('role');
@@ -20,6 +23,60 @@ export default function Home() {
       setRole(storedRole);
     }
   }, [router]);
+
+  const renderContent = () => {
+    const contentClasses = "w-full h-full flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-300";
+    
+    switch (activeTab) {
+      case 'home':
+        return (
+          <div className={contentClasses}>
+            <h1 className="text-4xl font-extrabold mb-4 text-green-800">Welcome Home</h1>
+            <p className="text-lg text-gray-600 max-w-md">
+              Access your files and manage your storage in one secure place.
+            </p>
+          </div>
+        );
+      case 'shared':
+        return (
+          <div className={contentClasses}>
+            <h1 className="text-4xl font-extrabold mb-4 text-green-800">Shared with Me</h1>
+            <p className="text-lg text-gray-600 max-w-md">
+              Collaborate on documents and folders shared by your team.
+            </p>
+          </div>
+        );
+      case 'trash':
+        return (
+          <div className={contentClasses}>
+            <h1 className="text-4xl font-extrabold mb-4 text-green-800">Trash</h1>
+            <p className="text-lg text-gray-600 max-w-md">
+              View and recover deleted files or empty your trash.
+            </p>
+          </div>
+        );
+      case 'settings':
+        return (
+          <div className={contentClasses}>
+            <h1 className="text-4xl font-extrabold mb-4 text-green-800">Settings</h1>
+            <p className="text-lg text-gray-600 max-w-md">
+              Configure your account preferences and security settings.
+            </p>
+          </div>
+        );
+      case 'administration':
+        return (
+          <div className={contentClasses}>
+            <h1 className="text-4xl font-extrabold mb-4 text-green-800">Administration</h1>
+            <p className="text-lg text-gray-600 max-w-md">
+              Manage users, roles, and system-wide configurations.
+            </p>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <>
@@ -41,17 +98,19 @@ export default function Home() {
         />
       )}
 
-      <main className="relative min-h-screen">
+      <main className="relative min-h-screen flex p-4 sm:p-6 gap-6 overflow-hidden">
         <BackgroundImage />
 
-        <div className="absolute inset-2 sm:inset-5 bg-white/70 p-6 sm:p-10 rounded-2xl shadow-md z-10 flex flex-col items-center justify-center text-center text-gray-700">
-          <h1 className="text-3xl font-bold mb-4">Your Profile</h1>
-          {role && (
-            <p className="text-lg">
-              You are logged in as a{' '}
-              <span className="font-semibold text-green-600">{role}</span>.
-            </p>
-          )}
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} userRole={role} />
+
+        <div className="flex-1 bg-white/70 backdrop-blur-md rounded-2xl shadow-lg z-10 p-10 relative overflow-hidden transition-all duration-500">
+          {/* Subtle background decoration */}
+          <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-green-100 rounded-full blur-3xl opacity-50 pointer-events-none" />
+          <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-64 h-64 bg-green-50 rounded-full blur-3xl opacity-50 pointer-events-none" />
+          
+          <div className="relative h-full">
+             {renderContent()}
+          </div>
         </div>
       </main>
     </>
