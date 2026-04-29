@@ -7,7 +7,12 @@ import { AdminIcon } from '@/components/ui/icons/Admin';
 import { UserRoles } from '@/enums/user-roles.enum';
 import clsx from 'clsx';
 
-export type TabType = 'home' | 'shared' | 'trash' | 'settings' | 'administration';
+export type TabType =
+  | 'home'
+  | 'shared'
+  | 'trash'
+  | 'settings'
+  | 'administration';
 
 interface SidebarProps {
   activeTab: TabType;
@@ -15,7 +20,11 @@ interface SidebarProps {
   userRole: string | null;
 }
 
-export const Sidebar = ({ activeTab, setActiveTab, userRole }: SidebarProps) => {
+export const Sidebar = ({
+  activeTab,
+  setActiveTab,
+  userRole,
+}: SidebarProps) => {
   const isAdmin = userRole === UserRoles.ADMIN || userRole === UserRoles.OWNER;
 
   const menuItems = [
@@ -26,13 +35,19 @@ export const Sidebar = ({ activeTab, setActiveTab, userRole }: SidebarProps) => 
   ];
 
   if (isAdmin) {
-    menuItems.push({ id: 'administration', label: 'Administration', icon: <AdminIcon /> });
+    menuItems.push({
+      id: 'administration',
+      label: 'Administration',
+      icon: <AdminIcon />,
+    });
   }
 
   return (
     <div className="w-64 h-full bg-white/70 backdrop-blur-md rounded-2xl shadow-lg flex flex-col p-4 z-20 transition-all duration-300">
       <div className="mb-8 px-4 py-2">
-        <h2 className="text-2xl font-bold text-green-800 tracking-tight">ForestCloud</h2>
+        <h2 className="text-2xl font-bold text-green-800 tracking-tight">
+          ForestCloud
+        </h2>
       </div>
 
       <nav className="flex-1 space-y-2">
@@ -50,13 +65,15 @@ export const Sidebar = ({ activeTab, setActiveTab, userRole }: SidebarProps) => 
             <span
               className={clsx(
                 'transition-colors duration-200',
-                activeTab === item.id ? 'text-white' : 'text-gray-500 group-hover:text-green-800',
+                activeTab === item.id
+                  ? 'text-white'
+                  : 'text-gray-500 group-hover:text-green-800',
               )}
             >
               {item.icon}
             </span>
             <span className="font-semibold">{item.label}</span>
-            
+
             {activeTab === item.id && (
               <div className="ml-auto w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
             )}
@@ -70,8 +87,12 @@ export const Sidebar = ({ activeTab, setActiveTab, userRole }: SidebarProps) => 
             {userRole?.[0]?.toUpperCase() || 'U'}
           </div>
           <div className="flex flex-col">
-            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">Role</span>
-            <span className="text-sm font-bold text-green-800 capitalize">{userRole}</span>
+            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+              Role
+            </span>
+            <span className="text-sm font-bold text-green-800 capitalize">
+              {userRole}
+            </span>
           </div>
         </div>
       </div>

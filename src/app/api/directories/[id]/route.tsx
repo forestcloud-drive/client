@@ -3,24 +3,22 @@ import axios, { isAxiosError } from 'axios';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:9180';
 
-export async function POST(req: NextRequest) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
-    const { searchParams } = new URL(req.url);
-    const parentId = searchParams.get('parentId');
+    const { id } = await params;
     const authHeader = req.headers.get('Authorization');
-    const body = await req.json();
 
-    const url = new URL(`${BACKEND_URL}/api/v1/directories`);
-    if (parentId) {
-      url.searchParams.append('parentId', parentId);
-    }
-
-    const response = await axios.post(url.toString(), body, {
-      headers: {
-        Authorization: authHeader || '',
-        'Content-Type': 'application/json',
+    const response = await axios.delete(
+      `${BACKEND_URL}/api/v1/directories/${id}`,
+      {
+        headers: {
+          Authorization: authHeader || '',
+        },
       },
-    });
+    );
 
     return NextResponse.json(response.data, { status: response.status });
   } catch (error: any) {

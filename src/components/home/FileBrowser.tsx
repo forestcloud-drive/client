@@ -1,13 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { FileIcon } from '@/components/ui/icons/File';
 import { FolderIcon } from '@/components/ui/icons/Folder';
 import { UploadIcon } from '@/components/ui/icons/Upload';
 import { PlusIcon } from '@/components/ui/icons/Plus';
+import { TrashIconMenu } from '@/components/ui/icons/TrashMenu';
 import clsx from 'clsx';
 
 interface FileData {
-  fileId: string;  
-  originalName: string;  
+  fileId: string;
+  originalName: string;
   mimeType: string;
   size: number;
   createdAt: string;
@@ -18,14 +19,20 @@ interface FileBrowserProps {
 }
 
 export const FileBrowser = ({ onToast }: FileBrowserProps) => {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<FileData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pathStack, setPathStack] = useState<{ id: string | null; name: string }[]>([
-    { id: null, name: 'Root' },
-  ]);
+  const [pathStack, setPathStack] = useState<
+    { id: string | null; name: string }[]
+  >([{ id: null, name: 'Root' }]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newDirName, setNewDirName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    item: FileData;
+  } | null>(null);
 
   const currentFolder = pathStack[pathStack.length - 1];
 
@@ -38,11 +45,13 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
         return;
       }
 
-      const url = id ? `/api/directories/content?parentId=${id}` : '/api/directories/content';
+      const url = id
+        ? `/api/directories/content?parentId=${id}`
+        : '/api/directories/content';
       const res = await fetch(url, {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (res.ok) {
         const data = await res.json();
@@ -63,7 +72,10 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
 
   const handleItemClick = (item: FileData) => {
     if (item.mimeType === 'text/directory') {
-      setPathStack((prev) => [...prev, { id: item.fileId, name: item.originalName }]);
+      setPathStack((prev) => [
+        ...prev,
+        { id: item.fileId, name: item.originalName },
+      ]);
     }
   };
 
@@ -77,6 +89,53 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
     }
   };
 
+  const handleContextMenu = (e: React.MouseEvent, item: FileData) => {
+    e.preventDefault();
+    if (!containerRef.current) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const itemRect = e.currentTarget.getBoundingClientRect();
+
+    // Position the menu to the right of the item
+    setContextMenu({
+      x: itemRect.right - containerRect.left + 10,
+      y: itemRect.top - containerRect.top + 10,
+      item,
+    });
+  };
+
+  const handleDelete = async () => {
+    if (!contextMenu) return;
+    const { item } = contextMenu;
+    setContextMenu(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/directories/${item.fileId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        onToast('Deleted successfully', 'success');
+        fetchContent(currentFolder.id);
+      } else {
+        const data = await res.json();
+        onToast(data.message || 'Failed to delete', 'error');
+      }
+    } catch (error) {
+      onToast('An error occurred during deletion', 'error');
+    }
+  };
+
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null);
+    window.addEventListener('click', handleClick);
+    return () => window.removeEventListener('click', handleClick);
+  }, []);
+
   const handleCreateDir = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newDirName.trim()) return;
@@ -84,15 +143,17 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
     setIsCreating(true);
     try {
       const token = localStorage.getItem('token');
-      const url = currentFolder.id ? `/api/directories?parentId=${currentFolder.id}` : '/api/directories';
-      
+      const url = currentFolder.id
+        ? `/api/directories?parentId=${currentFolder.id}`
+        : '/api/directories';
+
       const res = await fetch(url, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ dirname: newDirName })
+        body: JSON.stringify({ dirname: newDirName }),
       });
 
       if (res.ok) {
@@ -112,7 +173,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div ref={containerRef} className="flex flex-col h-full relative">
       {/* Action Bar */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
@@ -148,7 +209,12 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
               </svg>
             </button>
           )}
@@ -156,11 +222,15 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
         <div className="flex items-center space-x-2 overflow-x-auto pb-1 custom-scrollbar flex-1">
           {pathStack.map((folder, index) => (
             <React.Fragment key={index}>
-              {index > 0 && <span className="text-gray-400 animate-in fade-in duration-500">/</span>}
+              {index > 0 && (
+                <span className="text-gray-400 animate-in fade-in duration-500">
+                  /
+                </span>
+              )}
               <button
                 onClick={() => navigateToStack(index)}
                 className={clsx(
-                  'px-2 py-1 rounded-md transition-colors cursor-pointer whitespace-nowrap animate-in fade-in zoom-in duration-300',
+                  'px-2 py-1 rounded-md transition-all cursor-pointer whitespace-nowrap animate-in fade-in zoom-in duration-300',
                   index === pathStack.length - 1
                     ? 'bg-green-100 text-green-800 font-bold'
                     : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700',
@@ -177,7 +247,9 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm m-4 animate-in zoom-in duration-200">
-            <h3 className="text-xl font-bold text-green-800 mb-4">Create New Directory</h3>
+            <h3 className="text-xl font-bold text-green-800 mb-4">
+              Create New Directory
+            </h3>
             <form onSubmit={handleCreateDir}>
               <input
                 autoFocus
@@ -208,6 +280,50 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
         </div>
       )}
 
+      {/* Context Menu */}
+      {contextMenu && (
+        <div
+          // The key ensures the menu re-animates whenever it moves
+          key={`${contextMenu.item.fileId}-${contextMenu.x}-${contextMenu.y}`}
+          className="absolute z-[100] bg-white/80 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl py-1 w-48 animate-context-menu origin-left"
+          style={{ top: contextMenu.y, left: contextMenu.x }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Delete Action */}
+          <button
+            onClick={handleDelete}
+            className="w-full flex items-center px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50/50 transition-colors cursor-pointer rounded-t-xl"
+          >
+            <TrashIconMenu />
+            Delete
+          </button>
+
+          {/* Separator Line */}
+          <div className="h-[1px] bg-gray-200/50 mx-2" />
+
+          {/* Close Action */}
+          <button
+            onClick={() => setContextMenu(null)}
+            className="w-full flex items-center px-4 py-3 text-sm font-semibold text-gray-500 hover:bg-gray-100/50 transition-colors cursor-pointer rounded-b-xl"
+          >
+            <svg
+              className="w-4 h-4 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+            Close
+          </button>
+        </div>
+      )}
+
       {/* Content Area */}
       <div className="flex-1 overflow-y-auto min-h-0 pr-2 custom-scrollbar">
         {loading ? (
@@ -227,9 +343,19 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
                 className="group flex flex-col items-center p-4 rounded-2xl border-0 hover:bg-gray-100 transition-colors cursor-pointer active:scale-95"
               >
                 <div className="mb-3 transition-transform duration-300 group-hover:-translate-y-1">
-                   <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                   </svg>
+                  <svg
+                    className="w-10 h-10 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                    />
+                  </svg>
                 </div>
                 <span className="text-sm font-semibold text-gray-400 text-center truncate w-full px-2">
                   ..
@@ -240,16 +366,23 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
               <div
                 key={item.fileId}
                 onClick={() => handleItemClick(item)}
-                className="group flex flex-col items-center p-4 rounded-2xl hover:bg-green-50 transition-all cursor-pointer border border-transparent hover:border-green-100"
+                onContextMenu={(e) => handleContextMenu(e, item)}
+                className="group flex flex-col items-center p-4 rounded-2xl border-0 hover:bg-green-50 transition-all cursor-pointer animate-in fade-in zoom-in duration-300"
               >
                 <div className="mb-3 transition-transform duration-300 group-hover:scale-110">
-                  {item.mimeType === 'text/directory' ? <FolderIcon /> : <FileIcon />}
+                  {item.mimeType === 'text/directory' ? (
+                    <FolderIcon />
+                  ) : (
+                    <FileIcon />
+                  )}
                 </div>
                 <span className="text-sm font-semibold text-gray-700 text-center truncate w-full px-2">
                   {item.originalName}
                 </span>
                 <span className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-wider">
-                  {item.mimeType === 'text/directory' ? 'Directory' : item.mimeType?.split('/')[1] || 'File'}
+                  {item.mimeType === 'text/directory'
+                    ? 'Directory'
+                    : item.mimeType?.split('/')[1] || 'File'}
                 </span>
               </div>
             ))}
