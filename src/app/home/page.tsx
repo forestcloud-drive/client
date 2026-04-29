@@ -6,12 +6,22 @@ import { BackgroundImage } from '@/components/BackgroundImage';
 import { Toast, ToastStateProps } from '@/components/ui/Toast';
 import { SearchParamHandler } from './SeatchParamHandler';
 import { Sidebar, TabType } from '@/components/home/Sidebar';
+import { FileBrowser } from '@/components/home/FileBrowser';
 
 export default function Home() {
   const [role, setRole] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [toast, setToast] = useState<ToastStateProps | null>(null);
   const router = useRouter();
+
+  const handleToast = (message: string, type: 'success' | 'error', timeout = 3000) => {
+    setToast({
+      message,
+      type,
+      id: Date.now(),
+      timeout,
+    });
+  };
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -29,14 +39,7 @@ export default function Home() {
     
     switch (activeTab) {
       case 'home':
-        return (
-          <div className={contentClasses}>
-            <h1 className="text-4xl font-extrabold mb-4 text-green-800">Welcome Home</h1>
-            <p className="text-lg text-gray-600 max-w-md">
-              Access your files and manage your storage in one secure place.
-            </p>
-          </div>
-        );
+        return <FileBrowser onToast={handleToast} />;
       case 'shared':
         return (
           <div className={contentClasses}>
