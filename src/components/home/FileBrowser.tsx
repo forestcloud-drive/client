@@ -23,9 +23,9 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<FileData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pathStack, setPathStack] = useState<
-    { id: string | null; name: string }[]
-  >([{ id: null, name: 'Root' }]);
+  const [pathStack, setPathStack] = useState<{ id: string | null; name: string }[]>([
+    { id: null, name: 'Root' },
+  ]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newDirName, setNewDirName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
@@ -33,10 +33,14 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   const [renameValue, setRenameValue] = useState('');
   const [isRenaming, setIsRenaming] = useState(false);
   const [renamingItem, setRenamingItem] = useState<FileData | null>(null);
+
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
   const [isMoving, setIsMoving] = useState(false);
   const [movingItem, setMovingItem] = useState<FileData | null>(null);
-  const [targetDirId, setTargetDirId] = useState<string | null>(null);
+  const [movePathStack, setMovePathStack] = useState<{ id: string | null; name: string }[]>([{ id: null, name: 'Root' }]);
+  const [moveModalFolders, setMoveModalFolders] = useState<FileData[]>([]);
+  const [isLoadingMoveFolders, setIsLoadingMoveFolders] = useState(false);
+
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -55,9 +59,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
         return;
       }
 
-      const url = id
-        ? `/api/directories/content?parentId=${id}`
-        : '/api/directories/content';
+      const url = id ? `/api/directories/content?parentId=${id}` : '/api/directories/content';
       const res = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -76,16 +78,37 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
     }
   };
 
+  const fetchMoveFolders = async (id: string | null) => {
+    setIsLoadingMoveFolders(true);
+    try {
+      const token = localStorage.getItem('token');
+      const url = id ? `/api/directories/content?parentId=${id}` : '/api/directories/content';
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (res.ok) {
+        const data = await res.json();
+        setMoveModalFolders((data.files || []).filter((f: FileData) => f.mimeType === 'text/directory'));
+      }
+    } catch (error) {
+      onToast('Error fetching folders', 'error');
+    } finally {
+      setIsLoadingMoveFolders(false);
+    }
+  };
+
   useEffect(() => {
     fetchContent(currentFolder.id);
   }, [currentFolder.id]);
 
+  useEffect(() => {
+    if (isMoveModalOpen) {
+      const currentMoveFolder = movePathStack[movePathStack.length - 1];
+      fetchMoveFolders(currentMoveFolder.id);
+    }
+  }, [isMoveModalOpen, movePathStack]);
+
   const handleItemClick = (item: FileData) => {
     if (item.mimeType === 'text/directory') {
-      setPathStack((prev) => [
-        ...prev,
-        { id: item.fileId, name: item.originalName },
-      ]);
+      setPathStack((prev) => [...prev, { id: item.fileId, name: item.originalName }]);
     }
   };
 
@@ -106,7 +129,6 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
     const containerRect = containerRef.current.getBoundingClientRect();
     const itemRect = e.currentTarget.getBoundingClientRect();
 
-    // Position the menu to the right of the item
     setContextMenu({
       x: itemRect.right - containerRect.left + 10,
       y: itemRect.top - containerRect.top + 10,
@@ -134,9 +156,9 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ dirname: renameValue })
+        body: JSON.stringify({ dirname: renameValue }),
       });
 
       if (res.ok) {
@@ -158,12 +180,29 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   const handleMoveClick = () => {
     if (!contextMenu) return;
     setMovingItem(contextMenu.item);
+    setMovePathStack([...pathStack]);
     setIsMoveModalOpen(true);
     setContextMenu(null);
   };
 
+  const handleMoveModalNavigate = (folder: FileData) => {
+    setMovePathStack((prev) => [...prev, { id: folder.fileId, name: folder.originalName }]);
+  };
+
+  const handleMoveModalBack = () => {
+    if (movePathStack.length > 1) {
+      setMovePathStack((prev) => prev.slice(0, -1));
+    }
+  };
+
   const handleMoveSubmit = async () => {
     if (!movingItem || isMoving) return;
+    const targetFolder = movePathStack[movePathStack.length - 1];
+
+    if (movingItem.fileId === targetFolder.id) {
+      onToast('Cannot move folder into itself', 'error');
+      return;
+    }
 
     setIsMoving(true);
     try {
@@ -171,17 +210,16 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
       const res = await fetch(`/api/directories/${movingItem.fileId}/move`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ targetDir: targetDirId })
+        body: JSON.stringify({ targetDir: targetFolder.id ?? 'root' }),
       });
 
       if (res.ok) {
         onToast('Moved successfully', 'success');
         setIsMoveModalOpen(false);
         setMovingItem(null);
-        setTargetDirId(null);
         fetchContent(currentFolder.id);
       } else {
         const data = await res.json();
@@ -233,9 +271,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
     setIsCreating(true);
     try {
       const token = localStorage.getItem('token');
-      const url = currentFolder.id
-        ? `/api/directories?parentId=${currentFolder.id}`
-        : '/api/directories';
+      const url = currentFolder.id ? `/api/directories?parentId=${currentFolder.id}` : '/api/directories';
 
       const res = await fetch(url, {
         method: 'POST',
@@ -299,12 +335,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
             </button>
           )}
@@ -312,11 +343,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
         <div className="flex items-center space-x-2 overflow-x-auto pb-1 custom-scrollbar flex-1">
           {pathStack.map((folder, index) => (
             <React.Fragment key={index}>
-              {index > 0 && (
-                <span className="text-gray-400 animate-in fade-in duration-500">
-                  /
-                </span>
-              )}
+              {index > 0 && <span className="text-gray-400 animate-in fade-in duration-500">/</span>}
               <button
                 onClick={() => navigateToStack(index)}
                 className={clsx(
@@ -337,9 +364,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm m-4 animate-in zoom-in duration-200">
-            <h3 className="text-xl font-bold text-green-800 mb-4">
-              Create New Directory
-            </h3>
+            <h3 className="text-xl font-bold text-green-800 mb-4">Create New Directory</h3>
             <form onSubmit={handleCreateDir}>
               <input
                 autoFocus
@@ -383,12 +408,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
             onClick={handleRenameClick}
             className="w-full flex items-center px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50/50 transition-colors cursor-pointer rounded-t-xl"
           >
-            <svg
-              className="w-4 h-4 mr-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
+            <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -425,18 +445,8 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
             onClick={() => setContextMenu(null)}
             className="w-full flex items-center px-4 py-3 text-sm font-semibold text-gray-500 hover:bg-gray-100/50 transition-colors cursor-pointer rounded-b-xl"
           >
-            <svg
-              className="w-4 h-4 mr-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
+            <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
             Close
           </button>
@@ -447,9 +457,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
       {isRenameModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm m-4 animate-in zoom-in duration-200">
-            <h3 className="text-xl font-bold text-green-800 mb-4">
-              Rename Item
-            </h3>
+            <h3 className="text-xl font-bold text-green-800 mb-4">Rename Item</h3>
             <form onSubmit={handleRenameSubmit}>
               <input
                 autoFocus
@@ -483,55 +491,74 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
       {/* Modal for Moving */}
       {isMoveModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm m-4 animate-in zoom-in duration-200">
-            <h3 className="text-xl font-bold text-green-800 mb-4">
-              Move to Folder
-            </h3>
-            <div className="max-h-60 overflow-y-auto custom-scrollbar mb-6 space-y-2 pr-2">
-              {/* Root Option */}
-              <button
-                onClick={() => setTargetDirId('root')}
-                className={clsx(
-                  'w-full text-left px-4 py-3 rounded-xl font-semibold transition-all cursor-pointer flex items-center',
-                  targetDirId === 'root'
-                    ? 'bg-green-100 text-green-800 border-2 border-green-600'
-                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-2 border-transparent',
-                )}
-              >
-                <FolderIcon />
-                <span className="ml-3">Root</span>
-              </button>
-
-              {/* Other Folders in current view */}
-              {items
-                .filter(
-                  (item) =>
-                    item.mimeType === 'text/directory' &&
-                    item.fileId !== movingItem?.fileId,
-                )
-                .map((folder) => (
-                  <button
-                    key={folder.fileId}
-                    onClick={() => setTargetDirId(folder.fileId)}
-                    className={clsx(
-                      'w-full text-left px-4 py-3 rounded-xl font-semibold transition-all cursor-pointer flex items-center',
-                      targetDirId === folder.fileId
-                        ? 'bg-green-100 text-green-800 border-2 border-green-600'
-                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-2 border-transparent',
-                    )}
-                  >
-                    <FolderIcon />
-                    <span className="ml-3 truncate">{folder.originalName}</span>
-                  </button>
-                ))}
+          <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md m-4 animate-in zoom-in duration-200 flex flex-col max-h-[80vh]">
+            <h3 className="text-xl font-bold text-green-800 mb-2">Move to Folder</h3>
+            <div className="text-xs text-gray-400 mb-4 bg-gray-50 p-2 rounded-lg border border-gray-100 truncate font-mono">
+              Target: {movePathStack.map((p) => p.name).join(' / ')}
             </div>
-            <div className="flex space-x-3">
+
+            <div className="flex-1 overflow-y-auto custom-scrollbar mb-6 space-y-1 pr-1 min-h-[250px]">
+              {/* Back Button inside list */}
+              {movePathStack.length > 1 && (
+                <button
+                  onClick={handleMoveModalBack}
+                  className="w-full text-left px-4 py-3 rounded-xl font-bold text-green-700 bg-green-50 hover:bg-green-100 transition-all cursor-pointer flex items-center mb-2 border border-green-200 group"
+                >
+                  <svg
+                    className="w-5 h-5 mr-3 transition-transform group-hover:-translate-x-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                  </svg>
+                  .. (Back)
+                </button>
+              )}
+
+              {isLoadingMoveFolders ? (
+                <div className="flex flex-col items-center justify-center py-10 space-y-4">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                  <p className="text-sm text-gray-400">Fetching folders...</p>
+                </div>
+              ) : (
+                <>
+                  {moveModalFolders.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-10 text-gray-400 space-y-2">
+                      <FolderIcon />
+                      <p className="text-sm font-medium">No subfolders here</p>
+                    </div>
+                  )}
+                  {moveModalFolders
+                    .filter((folder) => folder.fileId !== movingItem?.fileId)
+                    .map((folder) => (
+                      <button
+                        key={folder.fileId}
+                        onClick={() => handleMoveModalNavigate(folder)}
+                        className="w-full text-left px-4 py-3 rounded-xl font-semibold bg-gray-50 text-gray-700 hover:bg-green-50 hover:text-green-800 transition-all cursor-pointer flex items-center group border border-transparent hover:border-green-200"
+                      >
+                        <FolderIcon />
+                        <span className="ml-3 truncate">{folder.originalName}</span>
+                        <svg
+                          className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-all transform group-hover:translate-x-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </button>
+                    ))}
+                </>
+              )}
+            </div>
+
+            <div className="flex space-x-3 pt-4 border-t border-gray-100">
               <button
                 type="button"
                 onClick={() => {
                   setIsMoveModalOpen(false);
                   setMovingItem(null);
-                  setTargetDirId(null);
                 }}
                 className="flex-1 py-3 font-semibold text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
               >
@@ -539,12 +566,10 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
               </button>
               <button
                 onClick={handleMoveSubmit}
-                disabled={
-                  isMoving || (movingItem && currentFolder.id === targetDirId)
-                }
-                className="flex-1 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all disabled:opacity-50 cursor-pointer"
+                disabled={isMoving || (movingItem && movingItem.fileId === movePathStack[movePathStack.length - 1].id)}
+                className="flex-1 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all disabled:opacity-50 cursor-pointer shadow-lg shadow-green-200 active:scale-95"
               >
-                {isMoving ? 'Moving...' : 'Move'}
+                {isMoving ? 'Moving...' : 'Move Here'}
               </button>
             </div>
           </div>
@@ -570,23 +595,11 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
                 className="group flex flex-col items-center p-4 rounded-2xl border-0 hover:bg-gray-100 transition-colors cursor-pointer active:scale-95"
               >
                 <div className="mb-3 transition-transform duration-300 group-hover:-translate-y-1">
-                  <svg
-                    className="w-10 h-10 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={1.5}
-                      d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
-                    />
+                  <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                   </svg>
                 </div>
-                <span className="text-sm font-semibold text-gray-400 text-center truncate w-full px-2">
-                  ..
-                </span>
+                <span className="text-sm font-semibold text-gray-400 text-center truncate w-full px-2">..</span>
               </div>
             )}
             {items.map((item) => (
@@ -597,19 +610,11 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
                 className="group flex flex-col items-center p-4 rounded-2xl border-0 hover:bg-green-50 transition-all cursor-pointer animate-in fade-in zoom-in duration-300"
               >
                 <div className="mb-3 transition-transform duration-300 group-hover:scale-110">
-                  {item.mimeType === 'text/directory' ? (
-                    <FolderIcon />
-                  ) : (
-                    <FileIcon />
-                  )}
+                  {item.mimeType === 'text/directory' ? <FolderIcon /> : <FileIcon />}
                 </div>
-                <span className="text-sm font-semibold text-gray-700 text-center truncate w-full px-2">
-                  {item.originalName}
-                </span>
+                <span className="text-sm font-semibold text-gray-700 text-center truncate w-full px-2">{item.originalName}</span>
                 <span className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-wider">
-                  {item.mimeType === 'text/directory'
-                    ? 'Directory'
-                    : item.mimeType?.split('/')[1] || 'File'}
+                  {item.mimeType === 'text/directory' ? 'Directory' : item.mimeType?.split('/')[1] || 'File'}
                 </span>
               </div>
             ))}
