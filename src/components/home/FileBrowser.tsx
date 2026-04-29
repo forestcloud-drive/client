@@ -490,10 +490,10 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
             <div className="max-h-60 overflow-y-auto custom-scrollbar mb-6 space-y-2 pr-2">
               {/* Root Option */}
               <button
-                onClick={() => setTargetDirId(null)}
+                onClick={() => setTargetDirId('root')}
                 className={clsx(
                   'w-full text-left px-4 py-3 rounded-xl font-semibold transition-all cursor-pointer flex items-center',
-                  targetDirId === null
+                  targetDirId === 'root'
                     ? 'bg-green-100 text-green-800 border-2 border-green-600'
                     : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-2 border-transparent',
                 )}
