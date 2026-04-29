@@ -28,10 +28,15 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newDirName, setNewDirName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renamingItem, setRenamingItem] = useState<FileData | null>(null);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
     item: FileData;
+    clickId: number;
   } | null>(null);
 
   const currentFolder = pathStack[pathStack.length - 1];
@@ -101,7 +106,48 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
       x: itemRect.right - containerRect.left + 10,
       y: itemRect.top - containerRect.top + 10,
       item,
+      clickId: Date.now(),
     });
+  };
+
+  const handleRenameClick = () => {
+    if (!contextMenu) return;
+    setRenamingItem(contextMenu.item);
+    setRenameValue(contextMenu.item.originalName);
+    setIsRenameModalOpen(true);
+    setContextMenu(null);
+  };
+
+  const handleRenameSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!renamingItem || !renameValue.trim()) return;
+
+    setIsRenaming(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/directories/${renamingItem.fileId}/rename`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ dirname: renameValue })
+      });
+
+      if (res.ok) {
+        onToast('Renamed successfully', 'success');
+        setIsRenameModalOpen(false);
+        setRenamingItem(null);
+        fetchContent(currentFolder.id);
+      } else {
+        const data = await res.json();
+        onToast(data.message || 'Failed to rename', 'error');
+      }
+    } catch (error) {
+      onToast('An error occurred during rename', 'error');
+    } finally {
+      setIsRenaming(false);
+    }
   };
 
   const handleDelete = async () => {
@@ -283,16 +329,36 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
       {/* Context Menu */}
       {contextMenu && (
         <div
-          // The key ensures the menu re-animates whenever it moves
-          key={`${contextMenu.item.fileId}-${contextMenu.x}-${contextMenu.y}`}
-          className="absolute z-[100] bg-white/80 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl py-1 w-48 animate-context-menu origin-left"
+          key={contextMenu.clickId}
+          className="absolute z-[100] bg-white/40 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl py-1 w-48 animate-context-menu origin-left"
           style={{ top: contextMenu.y, left: contextMenu.x }}
           onClick={(e) => e.stopPropagation()}
         >
+          {/* Rename Action */}
+          <button
+            onClick={handleRenameClick}
+            className="w-full flex items-center px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50/50 transition-colors cursor-pointer rounded-t-xl"
+          >
+            <svg
+              className="w-4 h-4 mr-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+              />
+            </svg>
+            Rename
+          </button>
+
           {/* Delete Action */}
           <button
             onClick={handleDelete}
-            className="w-full flex items-center px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50/50 transition-colors cursor-pointer rounded-t-xl"
+            className="w-full flex items-center px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50/50 transition-colors cursor-pointer"
           >
             <TrashIconMenu />
             Delete
@@ -321,6 +387,43 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
             </svg>
             Close
           </button>
+        </div>
+      )}
+
+      {/* Modal for Renaming */}
+      {isRenameModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm m-4 animate-in zoom-in duration-200">
+            <h3 className="text-xl font-bold text-green-800 mb-4">
+              Rename Item
+            </h3>
+            <form onSubmit={handleRenameSubmit}>
+              <input
+                autoFocus
+                type="text"
+                placeholder="New name"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-green-600 outline-none transition-colors mb-6 text-black font-semibold"
+              />
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setIsRenameModalOpen(false)}
+                  className="flex-1 py-3 font-semibold text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isRenaming || !renameValue.trim()}
+                  className="flex-1 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {isRenaming ? 'Renaming...' : 'Rename'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
 
