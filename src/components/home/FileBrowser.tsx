@@ -4,6 +4,7 @@ import { FolderIcon } from '@/components/ui/icons/Folder';
 import { UploadIcon } from '@/components/ui/icons/Upload';
 import { PlusIcon } from '@/components/ui/icons/Plus';
 import { TrashIconMenu } from '@/components/ui/icons/TrashMenu';
+import { MoveIcon } from '@/components/ui/icons/Move';
 import clsx from 'clsx';
 
 interface FileData {
@@ -32,6 +33,10 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   const [renameValue, setRenameValue] = useState('');
   const [isRenaming, setIsRenaming] = useState(false);
   const [renamingItem, setRenamingItem] = useState<FileData | null>(null);
+  const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
+  const [isMoving, setIsMoving] = useState(false);
+  const [movingItem, setMovingItem] = useState<FileData | null>(null);
+  const [targetDirId, setTargetDirId] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{
     x: number;
     y: number;
@@ -147,6 +152,45 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
       onToast('An error occurred during rename', 'error');
     } finally {
       setIsRenaming(false);
+    }
+  };
+
+  const handleMoveClick = () => {
+    if (!contextMenu) return;
+    setMovingItem(contextMenu.item);
+    setIsMoveModalOpen(true);
+    setContextMenu(null);
+  };
+
+  const handleMoveSubmit = async () => {
+    if (!movingItem || isMoving) return;
+
+    setIsMoving(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/directories/${movingItem.fileId}/move`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ targetDir: targetDirId })
+      });
+
+      if (res.ok) {
+        onToast('Moved successfully', 'success');
+        setIsMoveModalOpen(false);
+        setMovingItem(null);
+        setTargetDirId(null);
+        fetchContent(currentFolder.id);
+      } else {
+        const data = await res.json();
+        onToast(data.message || 'Failed to move', 'error');
+      }
+    } catch (error) {
+      onToast('An error occurred during move', 'error');
+    } finally {
+      setIsMoving(false);
     }
   };
 
@@ -355,6 +399,15 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
             Rename
           </button>
 
+          {/* Move Action */}
+          <button
+            onClick={handleMoveClick}
+            className="w-full flex items-center px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50/50 transition-colors cursor-pointer"
+          >
+            <MoveIcon />
+            Move
+          </button>
+
           {/* Delete Action */}
           <button
             onClick={handleDelete}
@@ -423,6 +476,77 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal for Moving */}
+      {isMoveModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-sm m-4 animate-in zoom-in duration-200">
+            <h3 className="text-xl font-bold text-green-800 mb-4">
+              Move to Folder
+            </h3>
+            <div className="max-h-60 overflow-y-auto custom-scrollbar mb-6 space-y-2 pr-2">
+              {/* Root Option */}
+              <button
+                onClick={() => setTargetDirId(null)}
+                className={clsx(
+                  'w-full text-left px-4 py-3 rounded-xl font-semibold transition-all cursor-pointer flex items-center',
+                  targetDirId === null
+                    ? 'bg-green-100 text-green-800 border-2 border-green-600'
+                    : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-2 border-transparent',
+                )}
+              >
+                <FolderIcon />
+                <span className="ml-3">Root</span>
+              </button>
+
+              {/* Other Folders in current view */}
+              {items
+                .filter(
+                  (item) =>
+                    item.mimeType === 'text/directory' &&
+                    item.fileId !== movingItem?.fileId,
+                )
+                .map((folder) => (
+                  <button
+                    key={folder.fileId}
+                    onClick={() => setTargetDirId(folder.fileId)}
+                    className={clsx(
+                      'w-full text-left px-4 py-3 rounded-xl font-semibold transition-all cursor-pointer flex items-center',
+                      targetDirId === folder.fileId
+                        ? 'bg-green-100 text-green-800 border-2 border-green-600'
+                        : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border-2 border-transparent',
+                    )}
+                  >
+                    <FolderIcon />
+                    <span className="ml-3 truncate">{folder.originalName}</span>
+                  </button>
+                ))}
+            </div>
+            <div className="flex space-x-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMoveModalOpen(false);
+                  setMovingItem(null);
+                  setTargetDirId(null);
+                }}
+                className="flex-1 py-3 font-semibold text-gray-500 hover:text-gray-700 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleMoveSubmit}
+                disabled={
+                  isMoving || (movingItem && currentFolder.id === targetDirId)
+                }
+                className="flex-1 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all disabled:opacity-50 cursor-pointer"
+              >
+                {isMoving ? 'Moving...' : 'Move'}
+              </button>
+            </div>
           </div>
         </div>
       )}
