@@ -3,7 +3,7 @@ import { FileIcon } from '@/components/ui/icons/File';
 import { FolderIcon } from '@/components/ui/icons/Folder';
 import { UploadIcon } from '@/components/ui/icons/Upload';
 import { PlusIcon } from '@/components/ui/icons/Plus';
-import { DefaultButton } from '@/components/buttons/DefaultButton';
+import clsx from 'clsx';
 
 interface FileData {
   fileId: string;  
@@ -20,10 +20,14 @@ interface FileBrowserProps {
 export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   const [items, setItems] = useState<FileData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [parentId, setParentId] = useState<string | null>(null);
+  const [pathStack, setPathStack] = useState<{ id: string | null; name: string }[]>([
+    { id: null, name: 'Root' },
+  ]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newDirName, setNewDirName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+
+  const currentFolder = pathStack[pathStack.length - 1];
 
   const fetchContent = async (id: string | null) => {
     setLoading(true);
@@ -54,12 +58,22 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   };
 
   useEffect(() => {
-    fetchContent(parentId);
-  }, [parentId]);
+    fetchContent(currentFolder.id);
+  }, [currentFolder.id]);
 
   const handleItemClick = (item: FileData) => {
     if (item.mimeType === 'text/directory') {
-      setParentId(item.fileId);
+      setPathStack((prev) => [...prev, { id: item.fileId, name: item.originalName }]);
+    }
+  };
+
+  const navigateToStack = (index: number) => {
+    setPathStack((prev) => prev.slice(0, index + 1));
+  };
+
+  const handleBack = () => {
+    if (pathStack.length > 1) {
+      setPathStack((prev) => prev.slice(0, -1));
     }
   };
 
@@ -70,7 +84,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
     setIsCreating(true);
     try {
       const token = localStorage.getItem('token');
-      const url = parentId ? `/api/directories?parentId=${parentId}` : '/api/directories';
+      const url = currentFolder.id ? `/api/directories?parentId=${currentFolder.id}` : '/api/directories';
       
       const res = await fetch(url, {
         method: 'POST',
@@ -85,7 +99,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
         onToast('Directory created successfully', 'success');
         setNewDirName('');
         setIsModalOpen(false);
-        fetchContent(parentId);
+        fetchContent(currentFolder.id);
       } else {
         const data = await res.json();
         onToast(data.message || 'Failed to create directory', 'error');
@@ -97,40 +111,66 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
     }
   };
 
-  const handleBack = () => {
-    //TODO This is a simplification. Real navigation would need a stack of parentIds
-    setParentId(null);
-  };
-
   return (
     <div className="flex flex-col h-full">
       {/* Action Bar */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
           <button
             onClick={() => onToast('Upload coming soon!', 'success')}
-            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all hover:scale-105 active:scale-95 shadow-md"
+            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all hover:scale-105 active:scale-95 shadow-md cursor-pointer"
           >
             <UploadIcon />
             Upload
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="flex items-center px-4 py-2 bg-white border-2 border-green-600 text-green-700 rounded-xl font-semibold hover:bg-green-50 transition-all hover:scale-105 active:scale-95"
+            className="flex items-center px-4 py-2 bg-white border-2 border-green-600 text-green-700 rounded-xl font-semibold hover:bg-green-50 transition-all hover:scale-105 active:scale-95 cursor-pointer"
           >
             <PlusIcon />
             Create Dir
           </button>
         </div>
+      </div>
 
-        {parentId && (
-          <button
-            onClick={handleBack}
-            className="text-green-700 font-semibold hover:underline cursor-pointer"
-          >
-            &larr; Back to Root
-          </button>
-        )}
+      {/* Path Breadcrumbs and Back Button */}
+      <div className="flex items-center space-x-2 mb-6 text-sm h-10">
+        <div className="flex items-center">
+          {pathStack.length > 1 && (
+            <button
+              onClick={handleBack}
+              className="p-2 rounded-full border-0 outline-none ring-0 hover:bg-green-100 text-green-700 transition-colors duration-200 cursor-pointer group mr-2 animate-in fade-in duration-300"
+              title="Go back"
+            >
+              <svg
+                className="w-5 h-5 transition-transform group-hover:-translate-x-1"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+              </svg>
+            </button>
+          )}
+        </div>
+        <div className="flex items-center space-x-2 overflow-x-auto pb-1 custom-scrollbar flex-1">
+          {pathStack.map((folder, index) => (
+            <React.Fragment key={index}>
+              {index > 0 && <span className="text-gray-400 animate-in fade-in duration-500">/</span>}
+              <button
+                onClick={() => navigateToStack(index)}
+                className={clsx(
+                  'px-2 py-1 rounded-md transition-colors cursor-pointer whitespace-nowrap animate-in fade-in zoom-in duration-300',
+                  index === pathStack.length - 1
+                    ? 'bg-green-100 text-green-800 font-bold'
+                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700',
+                )}
+              >
+                {folder.name}
+              </button>
+            </React.Fragment>
+          ))}
+        </div>
       </div>
 
       {/* Modal for creating directory */}
@@ -169,18 +209,33 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
       )}
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
+      <div className="flex-1 overflow-y-auto min-h-0 pr-2 custom-scrollbar">
         {loading ? (
           <div className="flex items-center justify-center h-full">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
           </div>
-        ) : items.length === 0 ? (
+        ) : items.length === 0 && pathStack.length <= 1 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400">
             <FolderIcon />
             <p className="mt-4 text-lg font-medium">This folder is empty</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 pb-10">
+            {pathStack.length > 1 && (
+              <div
+                onClick={handleBack}
+                className="group flex flex-col items-center p-4 rounded-2xl border-0 hover:bg-gray-100 transition-colors cursor-pointer active:scale-95"
+              >
+                <div className="mb-3 transition-transform duration-300 group-hover:-translate-y-1">
+                   <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                   </svg>
+                </div>
+                <span className="text-sm font-semibold text-gray-400 text-center truncate w-full px-2">
+                  ..
+                </span>
+              </div>
+            )}
             {items.map((item) => (
               <div
                 key={item.fileId}

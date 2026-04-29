@@ -101,7 +101,7 @@ export default function Home() {
         />
       )}
 
-      <main className="relative min-h-screen flex p-4 sm:p-6 gap-6 overflow-hidden">
+      <main className="relative h-screen flex p-4 sm:p-6 gap-6 overflow-hidden">
         <BackgroundImage />
 
         <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} userRole={role} />
@@ -111,7 +111,7 @@ export default function Home() {
           <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-green-100 rounded-full blur-3xl opacity-50 pointer-events-none" />
           <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-64 h-64 bg-green-50 rounded-full blur-3xl opacity-50 pointer-events-none" />
           
-          <div className="relative h-full">
+          <div className="relative h-full flex flex-col overflow-hidden">
              {renderContent()}
           </div>
         </div>
