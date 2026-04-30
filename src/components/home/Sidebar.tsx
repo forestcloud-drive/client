@@ -4,6 +4,7 @@ import { SharedIcon } from '@/components/ui/icons/Shared';
 import { TrashIcon } from '@/components/ui/icons/Trash';
 import { SettingsIcon } from '@/components/ui/icons/Settings';
 import { AdminIcon } from '@/components/ui/icons/Admin';
+import { LogoutIcon } from '@/components/ui/icons/Logout';
 import { UserRoles } from '@/enums/user-roles.enum';
 import clsx from 'clsx';
 
@@ -18,12 +19,14 @@ interface SidebarProps {
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
   userRole: string | null;
+  onLogout: () => void;
 }
 
 export const Sidebar = ({
   activeTab,
   setActiveTab,
   userRole,
+  onLogout,
 }: SidebarProps) => {
   const isAdmin = userRole === UserRoles.ADMIN || userRole === UserRoles.OWNER;
 
@@ -82,18 +85,28 @@ export const Sidebar = ({
       </nav>
 
       <div className="mt-auto p-4 border-t border-green-100">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-800 font-bold text-xs">
-            {userRole?.[0]?.toUpperCase() || 'U'}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-800 font-bold text-xs">
+              {userRole?.[0]?.toUpperCase() || 'U'}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+                Role
+              </span>
+              <span className="text-sm font-bold text-green-800 capitalize">
+                {userRole}
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-xs text-gray-400 font-medium uppercase tracking-wider">
-              Role
-            </span>
-            <span className="text-sm font-bold text-green-800 capitalize">
-              {userRole}
-            </span>
-          </div>
+
+          <button
+            onClick={onLogout}
+            title="Log Out"
+            className="p-2 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200 cursor-pointer active:scale-95"
+          >
+            <LogoutIcon />
+          </button>
         </div>
       </div>
     </div>

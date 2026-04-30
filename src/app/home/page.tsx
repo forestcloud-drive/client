@@ -27,6 +27,12 @@ export default function Home() {
     });
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    router.push('/auth');
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     const storedRole = localStorage.getItem('role');
@@ -121,6 +127,7 @@ export default function Home() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           userRole={role}
+          onLogout={handleLogout}
         />
 
         <div className="flex-1 bg-white/70 backdrop-blur-md rounded-2xl shadow-lg z-10 p-10 relative overflow-hidden transition-all duration-500">

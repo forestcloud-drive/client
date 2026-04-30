@@ -18,7 +18,7 @@ export async function PUT(
       {
         headers: {
           Authorization: authHeader || '',
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
       },
     );
