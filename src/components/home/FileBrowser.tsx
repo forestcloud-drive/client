@@ -5,6 +5,7 @@ import { UploadIcon } from '@/components/ui/icons/Upload';
 import { PlusIcon } from '@/components/ui/icons/Plus';
 import { TrashIconMenu } from '@/components/ui/icons/TrashMenu';
 import { MoveIcon } from '@/components/ui/icons/Move';
+import { DownloadIcon } from '@/components/ui/icons/Download';
 import clsx from 'clsx';
 
 interface FileData {
@@ -253,6 +254,38 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
     }
   };
 
+  const handleDownload = async () => {
+    if (!contextMenu) return;
+    const { item } = contextMenu;
+    setContextMenu(null);
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/files/download/${item.fileId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = item.originalName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        const data = await res.json();
+        onToast(data.message || 'Failed to download', 'error');
+      }
+    } catch (error) {
+      onToast('An error occurred during download', 'error');
+    }
+  };
+
   const handleDelete = async () => {
     if (!contextMenu) return;
     const { item } = contextMenu;
@@ -465,6 +498,15 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
           >
             <MoveIcon />
             Move
+          </button>
+
+          {/* Download Action (Files only) */}
+          <button
+            onClick={handleDownload}
+            className="w-full flex items-center px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50/50 transition-colors cursor-pointer"
+          >
+            <DownloadIcon />
+            Download
           </button>
 
           {/* Delete Action */}
