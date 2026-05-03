@@ -7,6 +7,7 @@ import { Toast, ToastStateProps } from '@/components/ui/Toast';
 import { SearchParamHandler } from './SeatchParamHandler';
 import { Sidebar, TabType } from '@/components/home/Sidebar';
 import { FileBrowser } from '@/components/home/FileBrowser';
+import { TrashBrowser } from '@/components/home/TrashBrowser';
 
 export default function Home() {
   const [role, setRole] = useState<string | null>(null);
@@ -63,16 +64,7 @@ export default function Home() {
           </div>
         );
       case 'trash':
-        return (
-          <div className={contentClasses}>
-            <h1 className="text-4xl font-extrabold mb-4 text-green-800">
-              Trash
-            </h1>
-            <p className="text-lg text-gray-600 max-w-md">
-              View and recover deleted files or empty your trash.
-            </p>
-          </div>
-        );
+        return <TrashBrowser onToast={handleToast} />;
       case 'settings':
         return (
           <div className={contentClasses}>
