@@ -97,7 +97,12 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/directories/${item.fileId}/restore`, {
+      const isDirectory = item.mimeType === 'text/directory';
+      const endpoint = isDirectory
+        ? `/api/directories/${item.fileId}/restore`
+        : `/api/files/${item.fileId}/restore`;
+
+      const res = await fetch(endpoint, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -123,7 +128,12 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/directories/${item.fileId}`, {
+      const isDirectory = item.mimeType === 'text/directory';
+      const endpoint = isDirectory
+        ? `/api/directories/${item.fileId}`
+        : `/api/files/${item.fileId}`;
+
+      const res = await fetch(endpoint, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -132,7 +142,8 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
         onToast('Deleted permanently', 'success');
         fetchTrash(currentFolder.id);
       } else {
-        onToast('Failed to delete', 'error');
+        const data = await res.json();
+        onToast(data.message || 'Failed to delete', 'error');
       }
     } catch (error) {
       onToast('An error occurred', 'error');

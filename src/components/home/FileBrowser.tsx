@@ -22,6 +22,7 @@ interface FileBrowserProps {
 
 export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<FileData[]>([]);
   const [loading, setLoading] = useState(true);
   const [pathStack, setPathStack] = useState<{ id: string | null; name: string }[]>([
@@ -38,6 +39,9 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   const [renameValue, setRenameValue] = useState('');
   const [isRenaming, setIsRenaming] = useState(false);
   const [renamingItem, setRenamingItem] = useState<FileData | null>(null);
+
+  // Upload state
+  const [isUploading, setIsUploading] = useState(false);
 
   // Move state
   const [isMoveModalOpen, setIsMoveModalOpen] = useState(false);
@@ -153,6 +157,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   const handleRenameSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!renamingItem || !renameValue.trim()) return;
+    if (renamingItem.mimeType !== 'text/directory') return;
 
     setIsRenaming(true);
     try {
@@ -205,14 +210,19 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
     const targetFolder = movePathStack[movePathStack.length - 1];
 
     if (movingItem.fileId === targetFolder.id) {
-      onToast('Cannot move folder into itself', 'error');
+      onToast('Cannot move item into itself', 'error');
       return;
     }
 
     setIsMoving(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/directories/${movingItem.fileId}/move`, {
+      const isDirectory = movingItem.mimeType === 'text/directory';
+      const endpoint = isDirectory 
+        ? `/api/directories/${movingItem.fileId}/move`
+        : `/api/files/${movingItem.fileId}/move`;
+
+      const res = await fetch(endpoint, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -253,7 +263,10 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = item.originalName;
+        const fileName = item.mimeType === 'text/directory' && !item.originalName.endsWith('.zip')
+          ? `${item.originalName}.zip`
+          : item.originalName;
+        a.download = fileName;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
@@ -274,7 +287,12 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/directories/${item.fileId}/trash`, {
+      const isDirectory = item.mimeType === 'text/directory';
+      const endpoint = isDirectory
+        ? `/api/directories/${item.fileId}/trash`
+        : `/api/files/${item.fileId}/trash`;
+
+      const res = await fetch(endpoint, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -298,7 +316,12 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/directories/${item.fileId}`, {
+      const isDirectory = item.mimeType === 'text/directory';
+      const endpoint = isDirectory
+        ? `/api/directories/${item.fileId}`
+        : `/api/files/${item.fileId}`;
+
+      const res = await fetch(endpoint, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -355,17 +378,74 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
     }
   };
 
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    for (let i = 0; i < files.length; i++) {
+      formData.append('files', files[i]);
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const url = currentFolder.id 
+        ? `/api/files/upload?parentId=${currentFolder.id}`
+        : '/api/files/upload';
+
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (res.ok) {
+        onToast(`Successfully uploaded ${files.length} file(s)`, 'success');
+        fetchContent(currentFolder.id);
+      } else {
+        const data = await res.json();
+        onToast(data.message || 'Failed to upload files', 'error');
+      }
+    } catch (error) {
+      onToast('An error occurred during upload', 'error');
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   return (
     <div ref={containerRef} className="flex flex-col h-full relative">
+      {/* Hidden File Input */}
+      <input
+        type="file"
+        multiple
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        className="hidden"
+      />
+      
       {/* Action Bar */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => onToast('Upload coming soon!', 'success')}
-            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all hover:scale-105 active:scale-95 shadow-md cursor-pointer"
+            onClick={handleUploadClick}
+            disabled={isUploading}
+            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all hover:scale-105 active:scale-95 shadow-md cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <UploadIcon />
-            Upload
+            {isUploading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            ) : (
+              <UploadIcon />
+            )}
+            {isUploading ? 'Uploading...' : 'Upload'}
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
@@ -386,9 +466,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
               className="p-2 rounded-full border-0 outline-none ring-0 hover:bg-green-100 text-green-700 transition-colors duration-200 cursor-pointer group mr-2 animate-in fade-in duration-300"
               title="Go back"
             >
-              <svg className="w-5 h-5 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
+              <svg className="w-5 h-5 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
             </button>
           )}
         </div>
@@ -445,34 +523,37 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
           style={{ top: contextMenu.y, left: contextMenu.x }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Rename Action */}
-          <button
-            onClick={handleRenameClick}
-            className="w-full flex items-center px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50/50 transition-colors cursor-pointer rounded-t-xl"
-          >
-            <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
-            Rename
-          </button>
+          {/* Rename Action (Directories only) */}
+          {contextMenu.item.mimeType === 'text/directory' && (
+            <button
+              onClick={handleRenameClick}
+              className="w-full flex items-center px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50/50 transition-colors cursor-pointer rounded-t-xl"
+            >
+              <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
+              Rename
+            </button>
+          )}
 
           {/* Move Action */}
           <button
             onClick={handleMoveClick}
-            className="w-full flex items-center px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50/50 transition-colors cursor-pointer"
+            className={clsx(
+              "w-full flex items-center px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50/50 transition-colors cursor-pointer",
+              contextMenu.item.mimeType !== 'text/directory' && "rounded-t-xl"
+            )}
           >
             <MoveIcon />
             Move
           </button>
 
-          {/* Download Action (Files only) */}
-          {contextMenu.item.mimeType !== 'text/directory' && (
-            <button
-              onClick={handleDownload}
-              className="w-full flex items-center px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50/50 transition-colors cursor-pointer"
-            >
-              <DownloadIcon />
-              Download
-            </button>
-          )}
+          {/* Download Action */}
+          <button
+            onClick={handleDownload}
+            className="w-full flex items-center px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50/50 transition-colors cursor-pointer"
+          >
+            <DownloadIcon />
+            Download
+          </button>
 
           {/* Trash Action */}
           <button
@@ -486,7 +567,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
           {/* Delete Action (Permanent) */}
           <button
             onClick={handleDelete}
-            className="w-full flex items-center px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50/50 transition-colors cursor-pointer"
+            className="w-full flex items-center px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50/50 transition-colors cursor-pointer rounded-b-xl"
           >
             <TrashIconMenu />
             Delete Permanently
