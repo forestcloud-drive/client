@@ -29,6 +29,7 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
     y: number;
     item: FileData;
     clickId: number;
+    position: 'left' | 'right';
   } | null>(null);
 
   const currentFolder = pathStack[pathStack.length - 1];
@@ -81,12 +82,24 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
 
     const containerRect = containerRef.current.getBoundingClientRect();
     const itemRect = e.currentTarget.getBoundingClientRect();
+    const menuWidth = 192; // w-48
+    const gap = 10;
+
+    let x = itemRect.right - containerRect.left + gap;
+    let position: 'left' | 'right' = 'right';
+
+    // If menu would overflow container's right edge, flip it to the left side of the item
+    if (x + menuWidth > containerRect.width) {
+      x = itemRect.left - containerRect.left - menuWidth - gap;
+      position = 'left';
+    }
 
     setContextMenu({
-      x: itemRect.right - containerRect.left + 10,
+      x,
       y: itemRect.top - containerRect.top + 10,
       item,
       clickId: Date.now(),
+      position,
     });
   };
 
@@ -194,7 +207,10 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
       {contextMenu && (
         <div
           key={contextMenu.clickId}
-          className="absolute z-[100] bg-white/40 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl py-1 w-48 animate-context-menu origin-left"
+          className={clsx(
+            "absolute z-[100] bg-white/40 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl py-1 w-48",
+            contextMenu.position === 'right' ? "animate-context-menu origin-left" : "animate-context-menu-right origin-right"
+          )}
           style={{ top: contextMenu.y, left: contextMenu.x }}
           onClick={(e) => e.stopPropagation()}
         >

@@ -41,6 +41,21 @@ body {
   animation: context-menu-in 0.2s ease-out forwards;
 }
 
+@keyframes context-menu-in-right {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateX(0);
+  }
+}
+
+.animate-context-menu-right {
+  animation: context-menu-in-right 0.2s ease-out forwards;
+}
+
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
