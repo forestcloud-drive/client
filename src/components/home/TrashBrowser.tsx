@@ -76,7 +76,8 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
 
   const handleContextMenu = (e: React.MouseEvent, item: FileData) => {
     e.preventDefault();
-    if (!containerRef.current) return;
+    // Only allow context menu for top-level trashed items
+    if (!containerRef.current || pathStack.length > 1) return;
 
     const containerRect = containerRef.current.getBoundingClientRect();
     const itemRect = e.currentTarget.getBoundingClientRect();
@@ -94,7 +95,25 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
     const { item } = contextMenu;
     setContextMenu(null);
 
-    onToast('Restore functionality coming soon', 'success');
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/directories/${item.fileId}/restore`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        onToast('Item restored successfully', 'success');
+        fetchTrash(currentFolder.id);
+      } else {
+        const data = await res.json();
+        onToast(data.message || 'Failed to restore', 'error');
+      }
+    } catch (error) {
+      onToast('An error occurred during restoration', 'error');
+    }
   };
 
   const handleDeletePermanent = async () => {
