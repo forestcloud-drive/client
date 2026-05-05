@@ -58,6 +58,7 @@ export default function AuthPage() {
 
       localStorage.setItem('token', data.auth_token);
       localStorage.setItem('role', data.user.role);
+      sessionStorage.setItem('up', password);
 
       setToast({
         message: 'Logged in successfully',

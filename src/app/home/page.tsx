@@ -7,7 +7,10 @@ import { Toast, ToastStateProps } from '@/components/ui/Toast';
 import { SearchParamHandler } from './SeatchParamHandler';
 import { Sidebar, TabType } from '@/components/home/Sidebar';
 import { FileBrowser } from '@/components/home/FileBrowser';
+import { ProfileView } from '@/components/home/ProfileView';
 import { TrashBrowser } from '@/components/home/TrashBrowser';
+import { SettingsView } from '@/components/home/SettingsView';
+import { useCallback } from 'react';
 
 export default function Home() {
   const [role, setRole] = useState<string | null>(null);
@@ -15,7 +18,7 @@ export default function Home() {
   const [toast, setToast] = useState<ToastStateProps | null>(null);
   const router = useRouter();
 
-  const handleToast = (
+  const handleToast = useCallback((
     message: string,
     type: 'success' | 'error',
     timeout = 3000,
@@ -26,7 +29,7 @@ export default function Home() {
       id: Date.now(),
       timeout,
     });
-  };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -52,6 +55,8 @@ export default function Home() {
     switch (activeTab) {
       case 'home':
         return <FileBrowser onToast={handleToast} />;
+      case 'profile':
+        return <ProfileView onToast={handleToast} onNavigate={setActiveTab} />;
       case 'shared':
         return (
           <div className={contentClasses}>
@@ -66,16 +71,7 @@ export default function Home() {
       case 'trash':
         return <TrashBrowser onToast={handleToast} />;
       case 'settings':
-        return (
-          <div className={contentClasses}>
-            <h1 className="text-4xl font-extrabold mb-4 text-green-800">
-              Settings
-            </h1>
-            <p className="text-lg text-gray-600 max-w-md">
-              Configure your account preferences and security settings.
-            </p>
-          </div>
-        );
+        return <SettingsView onToast={handleToast} />;
       case 'administration':
         return (
           <div className={contentClasses}>

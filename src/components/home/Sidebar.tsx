@@ -13,7 +13,8 @@ export type TabType =
   | 'shared'
   | 'trash'
   | 'settings'
-  | 'administration';
+  | 'administration'
+  | 'profile';
 
 interface SidebarProps {
   activeTab: TabType;
@@ -85,9 +86,12 @@ export const Sidebar = ({
       </nav>
 
       <div className="mt-auto p-4 border-t border-green-100">
-        <div className="flex items-center justify-between">
+        <div 
+          onClick={() => setActiveTab('profile')}
+          className="flex items-center justify-between hover:bg-green-50 p-2 rounded-xl transition-all cursor-pointer group"
+        >
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-800 font-bold text-xs">
+            <div className="w-8 h-8 rounded-full bg-green-200 flex items-center justify-center text-green-800 font-bold text-xs border-2 border-green-600/20 group-hover:border-green-600 group-hover:bg-green-600 group-hover:text-white transition-all duration-300 shadow-sm">
               {userRole?.[0]?.toUpperCase() || 'U'}
             </div>
             <div className="flex flex-col">
@@ -101,9 +105,12 @@ export const Sidebar = ({
           </div>
 
           <button
-            onClick={onLogout}
+            onClick={(e) => {
+              e.stopPropagation();
+              onLogout();
+            }}
             title="Log Out"
-            className="p-2 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-600 transition-all duration-200 cursor-pointer active:scale-95"
+            className="p-2 rounded-lg text-red-500 hover:bg-red-100 hover:text-red-600 transition-all duration-200 cursor-pointer active:scale-95"
           >
             <LogoutIcon />
           </button>
