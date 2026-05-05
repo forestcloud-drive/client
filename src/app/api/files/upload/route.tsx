@@ -17,8 +17,8 @@ export async function POST(req: NextRequest) {
 
     // Forward the multipart/form-data as a stream
     const formData = await req.formData();
-    
-    const backendUrl = parentId 
+
+    const backendUrl = parentId
       ? `${BACKEND_URL}/api/v1/files/upload?parentId=${parentId}`
       : `${BACKEND_URL}/api/v1/files/upload`;
 

@@ -12,12 +12,16 @@ export async function PUT(
     const body = await req.json();
     const authHeader = req.headers.get('Authorization');
 
-    const response = await axios.put(`${BACKEND_URL}/api/v1/files/${id}/move`, body, {
-      headers: {
-        Authorization: authHeader || '',
-        'Content-Type': 'application/json',
+    const response = await axios.put(
+      `${BACKEND_URL}/api/v1/files/${id}/move`,
+      body,
+      {
+        headers: {
+          Authorization: authHeader || '',
+          'Content-Type': 'application/json',
+        },
       },
-    });
+    );
 
     return NextResponse.json(response.data, { status: response.status });
   } catch (error: any) {
@@ -27,6 +31,9 @@ export async function PUT(
         { status: error.response?.status || 500 },
       );
     }
-    return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json(
+      { message: 'Internal Server Error' },
+      { status: 500 },
+    );
   }
 }

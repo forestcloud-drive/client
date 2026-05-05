@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
     const parentId = searchParams.get('parentId');
     const authHeader = req.headers.get('Authorization');
 
-    const url = parentId 
+    const url = parentId
       ? `${BACKEND_URL}/api/v1/files/trash?parentId=${parentId}`
       : `${BACKEND_URL}/api/v1/files/trash`;
 

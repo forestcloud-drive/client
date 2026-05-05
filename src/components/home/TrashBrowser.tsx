@@ -20,9 +20,9 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<FileData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pathStack, setPathStack] = useState<{ id: string | null; name: string }[]>([
-    { id: null, name: 'Trash' },
-  ]);
+  const [pathStack, setPathStack] = useState<
+    { id: string | null; name: string }[]
+  >([{ id: null, name: 'Trash' }]);
 
   const [contextMenu, setContextMenu] = useState<{
     x: number;
@@ -61,7 +61,10 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
 
   const handleItemClick = (item: FileData) => {
     if (item.mimeType === 'text/directory') {
-      setPathStack((prev) => [...prev, { id: item.fileId, name: item.originalName }]);
+      setPathStack((prev) => [
+        ...prev,
+        { id: item.fileId, name: item.originalName },
+      ]);
     }
   };
 
@@ -181,8 +184,23 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
       <div className="flex items-center space-x-2 mb-6 text-sm h-10">
         <div className="flex items-center">
           {pathStack.length > 1 && (
-            <button onClick={handleBack} className="p-2 rounded-full hover:bg-orange-100 text-orange-700 transition-all cursor-pointer mr-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+            <button
+              onClick={handleBack}
+              className="p-2 rounded-full hover:bg-orange-100 text-orange-700 transition-all cursor-pointer mr-2"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                />
+              </svg>
             </button>
           )}
         </div>
@@ -194,7 +212,9 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
                 onClick={() => navigateToStack(index)}
                 className={clsx(
                   'px-2 py-1 rounded-md transition-all cursor-pointer whitespace-nowrap',
-                  index === pathStack.length - 1 ? 'bg-orange-100 text-orange-800 font-bold' : 'text-gray-500 hover:bg-gray-100'
+                  index === pathStack.length - 1
+                    ? 'bg-orange-100 text-orange-800 font-bold'
+                    : 'text-gray-500 hover:bg-gray-100',
                 )}
               >
                 {folder.name}
@@ -208,17 +228,25 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
         <div
           key={contextMenu.clickId}
           className={clsx(
-            "absolute z-[100] bg-white/40 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl py-1 w-48",
-            contextMenu.position === 'right' ? "animate-context-menu origin-left" : "animate-context-menu-right origin-right"
+            'absolute z-[100] bg-white/40 backdrop-blur-md border border-white/20 shadow-2xl rounded-2xl py-1 w-48',
+            contextMenu.position === 'right'
+              ? 'animate-context-menu origin-left'
+              : 'animate-context-menu-right origin-right',
           )}
           style={{ top: contextMenu.y, left: contextMenu.x }}
           onClick={(e) => e.stopPropagation()}
         >
-          <button onClick={handleRestore} className="w-full flex items-center px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50/50 transition-colors cursor-pointer rounded-t-xl">
-             Restore
+          <button
+            onClick={handleRestore}
+            className="w-full flex items-center px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50/50 transition-colors cursor-pointer rounded-t-xl"
+          >
+            Restore
           </button>
-          <button onClick={handleDeletePermanent} className="w-full flex items-center px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50/50 transition-colors cursor-pointer rounded-b-xl">
-             Delete Permanently
+          <button
+            onClick={handleDeletePermanent}
+            className="w-full flex items-center px-4 py-3 text-sm font-semibold text-red-600 hover:bg-red-50/50 transition-colors cursor-pointer rounded-b-xl"
+          >
+            Delete Permanently
           </button>
         </div>
       )}
@@ -235,10 +263,17 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 pb-10">
-             {pathStack.length > 1 && (
-              <div onClick={handleBack} className="group flex flex-col items-center p-4 rounded-2xl hover:bg-orange-50 transition-colors cursor-pointer active:scale-95">
-                <div className="mb-3"><FolderIcon /></div>
-                <span className="text-sm font-semibold text-gray-400 text-center">..</span>
+            {pathStack.length > 1 && (
+              <div
+                onClick={handleBack}
+                className="group flex flex-col items-center p-4 rounded-2xl hover:bg-orange-50 transition-colors cursor-pointer active:scale-95"
+              >
+                <div className="mb-3">
+                  <FolderIcon />
+                </div>
+                <span className="text-sm font-semibold text-gray-400 text-center">
+                  ..
+                </span>
               </div>
             )}
             {items.map((item) => (
@@ -249,11 +284,19 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
                 className="group flex flex-col items-center p-4 rounded-2xl border-0 hover:bg-orange-50 transition-all cursor-pointer animate-in fade-in zoom-in duration-300"
               >
                 <div className="mb-3 transition-transform duration-300 group-hover:scale-110">
-                  {item.mimeType === 'text/directory' ? <FolderIcon /> : <FileIcon />}
+                  {item.mimeType === 'text/directory' ? (
+                    <FolderIcon />
+                  ) : (
+                    <FileIcon />
+                  )}
                 </div>
-                <span className="text-sm font-semibold text-gray-700 text-center truncate w-full px-2">{item.originalName}</span>
+                <span className="text-sm font-semibold text-gray-700 text-center truncate w-full px-2">
+                  {item.originalName}
+                </span>
                 <span className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-wider">
-                  {item.mimeType === 'text/directory' ? 'Directory' : item.mimeType?.split('/')[1] || 'File'}
+                  {item.mimeType === 'text/directory'
+                    ? 'Directory'
+                    : item.mimeType?.split('/')[1] || 'File'}
                 </span>
               </div>
             ))}
