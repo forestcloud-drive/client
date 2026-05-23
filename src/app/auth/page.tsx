@@ -46,16 +46,6 @@ export default function AuthPage() {
     const data = (await res.json()) as SigninResponseDto;
 
     if (res.ok) {
-      if (!data?.user?.hasAccess) {
-        setToast({
-          message: `Unfortunately you don't have access. Contact one of the administrators, or wait for the access`,
-          type: 'error',
-          timeout: 6000,
-          id: Date.now(),
-        });
-        return;
-      }
-
       localStorage.setItem('token', data.auth_token);
       localStorage.setItem('role', data.user.role);
 

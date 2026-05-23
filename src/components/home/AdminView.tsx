@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { AdminIcon } from '@/components/ui/icons/Admin';
 import { UserDetailView } from './UserDetailView';
+import { AddUserModal } from './AddUserModal';
+import { PlusIcon } from '@/components/ui/icons/Plus';
 
 interface User {
   userId: string;
@@ -19,28 +21,30 @@ export const AdminView = ({ onToast }: AdminViewProps) => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  const fetchUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/admin/users', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUsers(data.users || []);
+      } else {
+        onToast('Failed to load users', 'error');
+      }
+    } catch (error) {
+      onToast('An error occurred while fetching users', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const res = await fetch('/api/admin/users', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setUsers(data.users || []);
-        } else {
-          onToast('Failed to load users', 'error');
-        }
-      } catch (error) {
-        onToast('An error occurred while fetching users', 'error');
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchUsers();
   }, [onToast]);
 
@@ -63,14 +67,23 @@ export const AdminView = ({ onToast }: AdminViewProps) => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-y-auto custom-scrollbar pb-10">
+    <div className="max-w-6xl mx-auto w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-y-auto custom-scrollbar pb-10 px-4">
       <div className="flex items-center justify-between mb-2">
         <h1 className="text-3xl font-extrabold text-green-900 flex items-center">
           <AdminIcon className="w-8 h-8 mr-3 text-green-700" />
           User Administration
         </h1>
-        <div className="bg-green-100 text-green-800 px-4 py-1.5 rounded-full text-sm font-bold shadow-sm border border-green-200">
-          {users.length} Total Users
+        <div className="flex items-center space-x-4">
+          <div className="bg-green-100 text-green-800 px-4 py-1.5 rounded-full text-sm font-bold shadow-sm border border-green-200">
+            {users.length} Total Users
+          </div>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-all hover:shadow-green-200/50 hover:shadow-lg active:scale-95 shadow-md"
+          >
+            <PlusIcon className="w-5 h-5 mr-2" />
+            Add User
+          </button>
         </div>
       </div>
 
@@ -141,6 +154,13 @@ export const AdminView = ({ onToast }: AdminViewProps) => {
           </table>
         </div>
       </div>
+
+      <AddUserModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onSuccess={fetchUsers} 
+        onToast={onToast} 
+      />
     </div>
   );
 };

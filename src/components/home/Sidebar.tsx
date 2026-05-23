@@ -20,6 +20,7 @@ interface SidebarProps {
   activeTab: TabType;
   setActiveTab: (tab: TabType) => void;
   userRole: string | null;
+  hasAccess?: boolean;
   onLogout: () => void;
 }
 
@@ -27,18 +28,19 @@ export const Sidebar = ({
   activeTab,
   setActiveTab,
   userRole,
+  hasAccess = true,
   onLogout,
 }: SidebarProps) => {
   const isAdmin = userRole === UserRoles.ADMIN || userRole === UserRoles.OWNER;
 
-  const menuItems = [
+  const menuItems = hasAccess ? [
     { id: 'home', label: 'Home', icon: <HomeIcon /> },
     { id: 'shared', label: 'Shared', icon: <SharedIcon /> },
     { id: 'trash', label: 'Trash', icon: <TrashIcon /> },
     { id: 'settings', label: 'Settings', icon: <SettingsIcon /> },
-  ];
+  ] : [];
 
-  if (isAdmin) {
+  if (isAdmin && hasAccess) {
     menuItems.push({
       id: 'administration',
       label: 'Administration',

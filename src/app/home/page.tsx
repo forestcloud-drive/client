@@ -15,8 +15,10 @@ import { useCallback } from 'react';
 
 export default function Home() {
   const [role, setRole] = useState<string | null>(null);
+  const [hasAccess, setHasAccess] = useState<boolean>(false);
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [toast, setToast] = useState<ToastStateProps | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   const handleToast = useCallback((
@@ -39,19 +41,63 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedRole = localStorage.getItem('role');
+    const fetchProfile = async () => {
+      const token = localStorage.getItem('token');
+      const storedRole = localStorage.getItem('role');
 
-    if (!token || !storedRole) {
-      router.push('/auth');
-    } else {
+      if (!token || !storedRole) {
+        router.push('/auth');
+        return;
+      }
+
       setRole(storedRole);
-    }
+
+      try {
+        const res = await fetch('/api/users/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setHasAccess(data.hasAccess);
+          
+          // If user has no access, force them to profile tab and show message
+          if (!data.hasAccess) {
+            setActiveTab('profile');
+            handleToast(
+              "Unfortunately you don't have access. Contact one of the administrators, or wait for the access",
+              'error',
+              10000
+            );
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch profile for access check', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
   }, [router]);
+
+  if (isLoading) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-green-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
 
   const renderContent = () => {
     const contentClasses =
       'w-full h-full flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-300';
+
+    if (!hasAccess) {
+      return <ProfileView onToast={handleToast} onNavigate={setActiveTab} />;
+    }
 
     switch (activeTab) {
       case 'home':
@@ -107,6 +153,7 @@ export default function Home() {
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           userRole={role}
+          hasAccess={hasAccess}
           onLogout={handleLogout}
         />
 

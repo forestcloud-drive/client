@@ -70,6 +70,13 @@ export const ProfileView = ({
           <div>
             <h1 className="text-3xl font-extrabold text-green-900">{profile.fullname}</h1>
             <p className="text-green-700 font-medium">{profile.email}</p>
+            {!profile.hasAccess && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-2xl animate-pulse">
+                <p className="text-red-700 text-sm font-bold">
+                  Unfortunately you don't have access. Contact one of the administrators, or wait for the access.
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -95,19 +102,27 @@ export const ProfileView = ({
             <div className="flex items-center space-x-2">
               <div className={`w-3 h-3 rounded-full ${profile.hasAccess ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
               <span className={`text-sm font-bold ${profile.hasAccess ? 'text-green-700' : 'text-red-700'}`}>
-                {profile.hasAccess ? 'Access Granted' : 'Access Restricted'}
+                {profile.hasAccess ? 'Access Active' : 'Access Restricted'}
               </span>
             </div>
           </div>
 
-          <div className="bg-white/50 p-6 rounded-2xl border border-white/30 flex items-center justify-center">
-            <button 
-              onClick={() => onNavigate('settings')}
-              className="w-full py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-green-200"
-            >
-              Settings
-            </button>
-          </div>
+          {profile.hasAccess ? (
+            <div className="bg-white/50 p-6 rounded-2xl border border-white/30 flex items-center justify-center">
+              <button 
+                onClick={() => onNavigate('settings')}
+                className="w-full py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-all hover:scale-[1.02] active:scale-95 shadow-lg shadow-green-200"
+              >
+                Settings
+              </button>
+            </div>
+          ) : (
+            <div className="bg-white/50 p-6 rounded-2xl border border-white/30 flex items-center justify-center">
+              <p className="text-sm text-gray-500 font-medium text-center">
+                Contact an administrator to unlock more features.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
