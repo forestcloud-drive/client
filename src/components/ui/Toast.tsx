@@ -39,7 +39,6 @@ export const Toast = ({
       clearTimeout(showTimer);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-    // eslint-disable-next-line
   }, [timeout]);
 
   // Icons (simple SVGs)

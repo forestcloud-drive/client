@@ -28,8 +28,8 @@ export const AdminView = ({ onToast }: AdminViewProps) => {
       const token = localStorage.getItem('token');
       const res = await fetch('/api/admin/users', {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (res.ok) {
         const data = await res.json();
@@ -58,10 +58,10 @@ export const AdminView = ({ onToast }: AdminViewProps) => {
 
   if (selectedUserId) {
     return (
-      <UserDetailView 
-        userId={selectedUserId} 
-        onBack={() => setSelectedUserId(null)} 
-        onToast={onToast} 
+      <UserDetailView
+        userId={selectedUserId}
+        onBack={() => setSelectedUserId(null)}
+        onToast={onToast}
       />
     );
   }
@@ -81,7 +81,7 @@ export const AdminView = ({ onToast }: AdminViewProps) => {
             onClick={() => setIsAddModalOpen(true)}
             className="flex items-center px-4 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-all hover:shadow-green-200/50 hover:shadow-lg active:scale-95 shadow-md"
           >
-            <PlusIcon className="w-5 h-5 mr-2" />
+            <PlusIcon />
             Add User
           </button>
         </div>
@@ -92,16 +92,24 @@ export const AdminView = ({ onToast }: AdminViewProps) => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-white/50 border-b border-white/20">
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">User</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Role</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">Status</th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">ID</th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  User
+                </th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  Role
+                </th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">
+                  Status
+                </th>
+                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">
+                  ID
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
               {users.map((user) => (
-                <tr 
-                  key={user.userId} 
+                <tr
+                  key={user.userId}
                   className="hover:bg-white/30 transition-colors cursor-pointer group/row"
                   onClick={() => setSelectedUserId(user.userId)}
                 >
@@ -111,17 +119,23 @@ export const AdminView = ({ onToast }: AdminViewProps) => {
                         {user.fullname.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div className="font-bold text-green-900">{user.fullname}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
+                        <div className="font-bold text-green-900">
+                          {user.fullname}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {user.email}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-tighter ${
-                      user.role === 'admin' 
-                        ? 'bg-purple-100 text-purple-700 border border-purple-200' 
-                        : 'bg-blue-100 text-blue-700 border border-blue-200'
-                    }`}>
+                    <span
+                      className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-tighter ${
+                        user.role === 'admin'
+                          ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                          : 'bg-blue-100 text-blue-700 border border-blue-200'
+                      }`}
+                    >
                       {user.role}
                     </span>
                   </td>
@@ -155,11 +169,11 @@ export const AdminView = ({ onToast }: AdminViewProps) => {
         </div>
       </div>
 
-      <AddUserModal 
-        isOpen={isAddModalOpen} 
-        onClose={() => setIsAddModalOpen(false)} 
-        onSuccess={fetchUsers} 
-        onToast={onToast} 
+      <AddUserModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={fetchUsers}
+        onToast={onToast}
       />
     </div>
   );

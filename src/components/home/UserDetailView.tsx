@@ -15,7 +15,11 @@ interface UserDetailViewProps {
   onToast: (msg: string, type: 'success' | 'error') => void;
 }
 
-export const UserDetailView = ({ userId, onBack, onToast }: UserDetailViewProps) => {
+export const UserDetailView = ({
+  userId,
+  onBack,
+  onToast,
+}: UserDetailViewProps) => {
   const [user, setUser] = useState<UserDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
@@ -29,8 +33,8 @@ export const UserDetailView = ({ userId, onBack, onToast }: UserDetailViewProps)
         const token = localStorage.getItem('token');
         const res = await fetch(`/api/admin/users/${userId}`, {
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
 
         if (res.ok) {
@@ -43,6 +47,7 @@ export const UserDetailView = ({ userId, onBack, onToast }: UserDetailViewProps)
         }
       } catch (error) {
         onToast('An error occurred while fetching user details', 'error');
+        console.error(error);
       } finally {
         setLoading(false);
       }
@@ -63,13 +68,13 @@ export const UserDetailView = ({ userId, onBack, onToast }: UserDetailViewProps)
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           fullname: editFullname,
-          email: editEmail
-        })
+          email: editEmail,
+        }),
       });
 
       if (res.ok) {
@@ -83,6 +88,7 @@ export const UserDetailView = ({ userId, onBack, onToast }: UserDetailViewProps)
       }
     } catch (error) {
       onToast('An error occurred while updating user', 'error');
+      console.error(error);
     } finally {
       setIsSaving(false);
     }
@@ -100,7 +106,7 @@ export const UserDetailView = ({ userId, onBack, onToast }: UserDetailViewProps)
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-400">
         <p className="text-lg font-medium">User not found</p>
-        <button 
+        <button
           onClick={onBack}
           className="mt-4 px-6 py-2 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-all"
         >
@@ -113,30 +119,60 @@ export const UserDetailView = ({ userId, onBack, onToast }: UserDetailViewProps)
   return (
     <div className="max-w-2xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-6">
-        <button 
+        <button
           onClick={onBack}
           className="flex items-center text-green-700 hover:text-green-900 font-bold transition-colors group"
         >
-          <svg className="w-5 h-5 mr-2 transition-transform group-hover:-translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          <svg
+            className="w-5 h-5 mr-2 transition-transform group-hover:-translate-x-1"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
           </svg>
           Back to Users
         </button>
       </div>
 
       <div className="bg-white/40 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl relative">
-        <button 
-          onClick={() => isEditing ? setIsEditing(false) : setIsEditing(true)}
+        <button
+          onClick={() => (isEditing ? setIsEditing(false) : setIsEditing(true))}
           className="absolute top-8 right-8 p-2 rounded-full hover:bg-green-100 text-green-700 transition-colors"
-          title={isEditing ? "Cancel" : "Edit Profile"}
+          title={isEditing ? 'Cancel' : 'Edit Profile'}
         >
           {isEditing ? (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l18 18" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           ) : (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
             </svg>
           )}
         </button>
@@ -163,7 +199,9 @@ export const UserDetailView = ({ userId, onBack, onToast }: UserDetailViewProps)
               </div>
             ) : (
               <>
-                <h1 className="text-3xl font-extrabold text-green-900">{user.fullname}</h1>
+                <h1 className="text-3xl font-extrabold text-green-900">
+                  {user.fullname}
+                </h1>
                 <p className="text-green-700 font-medium">{user.email}</p>
               </>
             )}
@@ -177,37 +215,54 @@ export const UserDetailView = ({ userId, onBack, onToast }: UserDetailViewProps)
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white/50 p-6 rounded-2xl border border-white/30">
-            <span className="text-xs text-gray-400 uppercase font-bold tracking-widest block mb-2">User ID</span>
+            <span className="text-xs text-gray-400 uppercase font-bold tracking-widest block mb-2">
+              User ID
+            </span>
             <code className="text-sm font-mono text-gray-700 break-all bg-gray-100/50 p-2 rounded-lg block select-all">
               {user.userId}
             </code>
           </div>
 
           <div className="bg-white/50 p-6 rounded-2xl border border-white/30">
-            <span className="text-xs text-gray-400 uppercase font-bold tracking-widest block mb-2">Account Role</span>
+            <span className="text-xs text-gray-400 uppercase font-bold tracking-widest block mb-2">
+              Account Role
+            </span>
             <div className="flex items-center space-x-2">
-              <span className={`px-3 py-1 rounded-full text-sm font-bold uppercase tracking-wide ${
-                user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-green-100 text-green-800'
-              }`}>
+              <span
+                className={`px-3 py-1 rounded-full text-sm font-bold uppercase tracking-wide ${
+                  user.role === 'admin'
+                    ? 'bg-purple-100 text-purple-800'
+                    : 'bg-green-100 text-green-800'
+                }`}
+              >
                 {user.role}
               </span>
             </div>
           </div>
 
           <div className="bg-white/50 p-6 rounded-2xl border border-white/30">
-            <span className="text-xs text-gray-400 uppercase font-bold tracking-widest block mb-2">Status</span>
+            <span className="text-xs text-gray-400 uppercase font-bold tracking-widest block mb-2">
+              Status
+            </span>
             <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${user.hasAccess ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
-              <span className={`text-sm font-bold ${user.hasAccess ? 'text-green-700' : 'text-red-700'}`}>
+              <div
+                className={`w-3 h-3 rounded-full ${user.hasAccess ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}
+              />
+              <span
+                className={`text-sm font-bold ${user.hasAccess ? 'text-green-700' : 'text-red-700'}`}
+              >
                 {user.hasAccess ? 'Access Granted' : 'Access Restricted'}
               </span>
             </div>
           </div>
 
           <div className="bg-white/50 p-6 rounded-2xl border border-white/30">
-            <span className="text-xs text-gray-400 uppercase font-bold tracking-widest block mb-2">Data Protection</span>
+            <span className="text-xs text-gray-400 uppercase font-bold tracking-widest block mb-2">
+              Data Protection
+            </span>
             <p className="text-sm text-gray-500 font-medium italic">
-              User data is managed according to the system's privacy policy.
+              User data is managed according to the system&apos;s privacy
+              policy.
             </p>
           </div>
         </div>

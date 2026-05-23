@@ -33,12 +33,14 @@ export const Sidebar = ({
 }: SidebarProps) => {
   const isAdmin = userRole === UserRoles.ADMIN || userRole === UserRoles.OWNER;
 
-  const menuItems = hasAccess ? [
-    { id: 'home', label: 'Home', icon: <HomeIcon /> },
-    { id: 'shared', label: 'Shared', icon: <SharedIcon /> },
-    { id: 'trash', label: 'Trash', icon: <TrashIcon /> },
-    { id: 'settings', label: 'Settings', icon: <SettingsIcon /> },
-  ] : [];
+  const menuItems = hasAccess
+    ? [
+        { id: 'home', label: 'Home', icon: <HomeIcon /> },
+        { id: 'shared', label: 'Shared', icon: <SharedIcon /> },
+        { id: 'trash', label: 'Trash', icon: <TrashIcon /> },
+        { id: 'settings', label: 'Settings', icon: <SettingsIcon /> },
+      ]
+    : [];
 
   if (isAdmin && hasAccess) {
     menuItems.push({
@@ -88,7 +90,7 @@ export const Sidebar = ({
       </nav>
 
       <div className="mt-auto p-4 border-t border-green-100">
-        <div 
+        <div
           onClick={() => setActiveTab('profile')}
           className="flex items-center justify-between hover:bg-green-50 p-2 rounded-xl transition-all cursor-pointer group"
         >

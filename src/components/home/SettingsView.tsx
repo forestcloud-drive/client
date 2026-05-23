@@ -11,7 +11,7 @@ export const SettingsView = ({ onToast, onLogout }: SettingsViewProps) => {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
+
   const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
   const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,8 +22,8 @@ export const SettingsView = ({ onToast, onLogout }: SettingsViewProps) => {
         const token = localStorage.getItem('token');
         const res = await fetch('/api/users/profile', {
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
         if (res.ok) {
           const data = await res.json();
@@ -32,6 +32,7 @@ export const SettingsView = ({ onToast, onLogout }: SettingsViewProps) => {
         }
       } catch (error) {
         onToast('Failed to load profile data', 'error');
+        console.error(error);
       } finally {
         setIsLoading(false);
       }
@@ -49,10 +50,10 @@ export const SettingsView = ({ onToast, onLogout }: SettingsViewProps) => {
       const res = await fetch('/api/users/profile', {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ fullname, email })
+        body: JSON.stringify({ fullname, email }),
       });
 
       if (res.ok) {
@@ -66,6 +67,7 @@ export const SettingsView = ({ onToast, onLogout }: SettingsViewProps) => {
       }
     } catch (error) {
       onToast('An error occurred', 'error');
+      console.error(error);
     } finally {
       setIsUpdatingProfile(false);
     }
@@ -84,14 +86,17 @@ export const SettingsView = ({ onToast, onLogout }: SettingsViewProps) => {
       const res = await fetch('/api/users/password', {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ oldPassword, newPassword })
+        body: JSON.stringify({ oldPassword, newPassword }),
       });
 
       if (res.ok) {
-        onToast('Password changed successfully. Please login again.', 'success');
+        onToast(
+          'Password changed successfully. Please login again.',
+          'success',
+        );
         setTimeout(() => {
           onLogout();
         }, 1500);
@@ -101,6 +106,7 @@ export const SettingsView = ({ onToast, onLogout }: SettingsViewProps) => {
       }
     } catch (error) {
       onToast('An error occurred', 'error');
+      console.error(error);
     } finally {
       setIsUpdatingPassword(false);
     }
@@ -116,21 +122,35 @@ export const SettingsView = ({ onToast, onLogout }: SettingsViewProps) => {
 
   return (
     <div className="max-w-4xl mx-auto w-full space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 overflow-y-auto custom-scrollbar pb-10">
-      <h1 className="text-3xl font-extrabold text-green-900 mb-2">Account Settings</h1>
-      
+      <h1 className="text-3xl font-extrabold text-green-900 mb-2">
+        Account Settings
+      </h1>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Profile Information */}
         <div className="bg-white/40 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-xl">
           <h2 className="text-xl font-bold text-green-800 mb-6 flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
             </svg>
             Profile Information
           </h2>
-          
+
           <form onSubmit={handleUpdateProfile} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Full Name</label>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">
+                Full Name
+              </label>
               <input
                 type="text"
                 value={fullname}
@@ -140,7 +160,9 @@ export const SettingsView = ({ onToast, onLogout }: SettingsViewProps) => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Email Address</label>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">
+                Email Address
+              </label>
               <input
                 type="email"
                 value={email}
@@ -162,15 +184,27 @@ export const SettingsView = ({ onToast, onLogout }: SettingsViewProps) => {
         {/* Password Change */}
         <div className="bg-white/40 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-xl">
           <h2 className="text-xl font-bold text-green-800 mb-6 flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+              />
             </svg>
             Security
           </h2>
-          
+
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Current Password</label>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">
+                Current Password
+              </label>
               <input
                 type="password"
                 value={oldPassword}
@@ -181,7 +215,9 @@ export const SettingsView = ({ onToast, onLogout }: SettingsViewProps) => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">New Password</label>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">
+                New Password
+              </label>
               <input
                 type="password"
                 value={newPassword}
@@ -192,7 +228,9 @@ export const SettingsView = ({ onToast, onLogout }: SettingsViewProps) => {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Confirm New Password</label>
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">
+                Confirm New Password
+              </label>
               <input
                 type="password"
                 value={confirmPassword}

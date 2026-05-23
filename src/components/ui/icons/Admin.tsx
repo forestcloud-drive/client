@@ -2,7 +2,7 @@ interface AdminIconProps {
   className?: string;
 }
 
-export const AdminIcon = ({ className = "w-6 h-6 mr-3" }: AdminIconProps) => {
+export const AdminIcon = ({ className = 'w-6 h-6 mr-3' }: AdminIconProps) => {
   return (
     <svg
       className={`${className} flex-shrink-0`}

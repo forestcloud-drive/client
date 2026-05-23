@@ -69,13 +69,16 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/files/search?title=${encodeURIComponent(title)}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await fetch(
+        `/api/files/search?title=${encodeURIComponent(title)}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       if (res.ok) {
         const data = await res.json();
         // Handle both flat array and wrapped { files: [] } responses
-        const results = Array.isArray(data) ? data : (data.files || []);
+        const results = Array.isArray(data) ? data : data.files || [];
         setItems(results);
       } else {
         onToast('Failed to search', 'error');
@@ -529,8 +532,18 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
         {/* Search Bar */}
         <div className="flex-1 max-w-md relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className="h-5 w-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
           </div>
           <input
@@ -545,8 +558,18 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
               onClick={() => setSearchQuery('')}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
             >
-              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           )}
@@ -871,9 +894,8 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
                 onClick={handleMoveSubmit}
                 disabled={
                   isMoving ||
-                  (movingItem &&
-                    movingItem.fileId ===
-                      movePathStack[movePathStack.length - 1].id)
+                  movingItem?.fileId ===
+                    movePathStack[movePathStack.length - 1]?.id
                 }
                 className="flex-1 py-3 bg-green-600 text-white rounded-xl font-semibold hover:bg-green-700 transition-all disabled:opacity-50 cursor-pointer shadow-lg shadow-green-200 active:scale-95"
               >
@@ -894,11 +916,23 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
           <div className="flex flex-col items-center justify-center h-full text-gray-400">
             {searchQuery ? (
               <>
-                <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg
+                  className="w-16 h-16 mb-4 text-gray-300"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
-                <p className="text-lg font-medium">No files or folders found for "{searchQuery}"</p>
-                <button 
+                <p className="text-lg font-medium">
+                  No files or folders found for "{searchQuery}"
+                </p>
+                <button
                   onClick={() => setSearchQuery('')}
                   className="mt-4 text-green-600 font-bold hover:underline cursor-pointer"
                 >
@@ -939,30 +973,31 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
                 </span>
               </div>
             )}
-            {Array.isArray(items) && items.map((item) => (
-              <div
-                key={item.fileId}
-                onClick={() => handleItemClick(item)}
-                onContextMenu={(e) => handleContextMenu(e, item)}
-                className="group flex flex-col items-center p-4 rounded-2xl border-0 hover:bg-green-50 transition-all cursor-pointer animate-in fade-in zoom-in duration-300"
-              >
-                <div className="mb-3 transition-transform duration-300 group-hover:scale-110">
-                  {item.mimeType === 'text/directory' ? (
-                    <FolderIcon />
-                  ) : (
-                    <FileIcon />
-                  )}
+            {Array.isArray(items) &&
+              items.map((item) => (
+                <div
+                  key={item.fileId}
+                  onClick={() => handleItemClick(item)}
+                  onContextMenu={(e) => handleContextMenu(e, item)}
+                  className="group flex flex-col items-center p-4 rounded-2xl border-0 hover:bg-green-50 transition-all cursor-pointer animate-in fade-in zoom-in duration-300"
+                >
+                  <div className="mb-3 transition-transform duration-300 group-hover:scale-110">
+                    {item.mimeType === 'text/directory' ? (
+                      <FolderIcon />
+                    ) : (
+                      <FileIcon />
+                    )}
+                  </div>
+                  <span className="text-sm font-semibold text-gray-700 text-center truncate w-full px-2">
+                    {item.originalName}
+                  </span>
+                  <span className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-wider">
+                    {item.mimeType === 'text/directory'
+                      ? 'Directory'
+                      : item.mimeType?.split('/')[1] || 'File'}
+                  </span>
                 </div>
-                <span className="text-sm font-semibold text-gray-700 text-center truncate w-full px-2">
-                  {item.originalName}
-                </span>
-                <span className="text-[10px] text-gray-400 mt-1 uppercase font-bold tracking-wider">
-                  {item.mimeType === 'text/directory'
-                    ? 'Directory'
-                    : item.mimeType?.split('/')[1] || 'File'}
-                </span>
-              </div>
-            ))}
+              ))}
           </div>
         )}
       </div>

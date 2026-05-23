@@ -50,6 +50,7 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
       }
     } catch (error) {
       onToast('An error occurred', 'error');
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -134,6 +135,7 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
       }
     } catch (error) {
       onToast('An error occurred during restoration', 'error');
+      console.error(error);
     }
   };
 
@@ -163,6 +165,7 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
       }
     } catch (error) {
       onToast('An error occurred', 'error');
+      console.error(error);
     }
   };
 

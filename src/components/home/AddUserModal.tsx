@@ -8,7 +8,12 @@ interface AddUserModalProps {
   onToast: (msg: string, type: 'success' | 'error') => void;
 }
 
-export const AddUserModal = ({ isOpen, onClose, onSuccess, onToast }: AddUserModalProps) => {
+export const AddUserModal = ({
+  isOpen,
+  onClose,
+  onSuccess,
+  onToast,
+}: AddUserModalProps) => {
   const [fullname, setFullname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,8 +37,8 @@ export const AddUserModal = ({ isOpen, onClose, onSuccess, onToast }: AddUserMod
       const res = await fetch('/api/admin/users', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           fullname,
@@ -41,8 +46,8 @@ export const AddUserModal = ({ isOpen, onClose, onSuccess, onToast }: AddUserMod
           password,
           role,
           hasAccess,
-          mustChangePassword
-        })
+          mustChangePassword,
+        }),
       });
 
       if (res.ok) {
@@ -69,22 +74,32 @@ export const AddUserModal = ({ isOpen, onClose, onSuccess, onToast }: AddUserMod
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div 
+      <div
         className="bg-white/90 backdrop-blur-2xl border border-white/20 w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-8">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-2xl font-bold text-green-900 flex items-center">
-              <PlusIcon className="w-6 h-6 mr-2 text-green-600" />
+              <PlusIcon />
               Add New User
             </h2>
-            <button 
+            <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l18 18" />
+              <svg
+                className="w-6 h-6 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -92,7 +107,9 @@ export const AddUserModal = ({ isOpen, onClose, onSuccess, onToast }: AddUserMod
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="col-span-2">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Full Name</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+                  Full Name
+                </label>
                 <input
                   type="text"
                   required
@@ -104,7 +121,9 @@ export const AddUserModal = ({ isOpen, onClose, onSuccess, onToast }: AddUserMod
                 />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Email Address</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   required
@@ -116,7 +135,9 @@ export const AddUserModal = ({ isOpen, onClose, onSuccess, onToast }: AddUserMod
                 />
               </div>
               <div className="col-span-2">
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Password</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+                  Password
+                </label>
                 <input
                   type="password"
                   required
@@ -128,7 +149,9 @@ export const AddUserModal = ({ isOpen, onClose, onSuccess, onToast }: AddUserMod
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">Role</label>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-1.5 ml-1">
+                  Role
+                </label>
                 <select
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
@@ -146,14 +169,28 @@ export const AddUserModal = ({ isOpen, onClose, onSuccess, onToast }: AddUserMod
                     onChange={(e) => setHasAccess(e.target.checked)}
                     className="hidden"
                   />
-                  <div className={`w-5 h-5 rounded border-2 mr-2 flex items-center justify-center transition-all ${hasAccess ? 'bg-green-600 border-green-600' : 'border-gray-300'}`}>
+                  <div
+                    className={`w-5 h-5 rounded border-2 mr-2 flex items-center justify-center transition-all ${hasAccess ? 'bg-green-600 border-green-600' : 'border-gray-300'}`}
+                  >
                     {hasAccess && (
-                      <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      <svg
+                        className="w-3.5 h-3.5 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={3}
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                     )}
                   </div>
-                  <span className="text-sm font-bold text-gray-600 group-hover:text-green-800 transition-colors">Active Access</span>
+                  <span className="text-sm font-bold text-gray-600 group-hover:text-green-800 transition-colors">
+                    Active Access
+                  </span>
                 </label>
                 <label className="flex items-center cursor-pointer group">
                   <input
@@ -162,14 +199,28 @@ export const AddUserModal = ({ isOpen, onClose, onSuccess, onToast }: AddUserMod
                     onChange={(e) => setMustChangePassword(e.target.checked)}
                     className="hidden"
                   />
-                  <div className={`w-5 h-5 rounded border-2 mr-2 flex items-center justify-center transition-all ${mustChangePassword ? 'bg-green-600 border-green-600' : 'border-gray-300'}`}>
+                  <div
+                    className={`w-5 h-5 rounded border-2 mr-2 flex items-center justify-center transition-all ${mustChangePassword ? 'bg-green-600 border-green-600' : 'border-gray-300'}`}
+                  >
                     {mustChangePassword && (
-                      <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      <svg
+                        className="w-3.5 h-3.5 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={3}
+                          d="M5 13l4 4L19 7"
+                        />
                       </svg>
                     )}
                   </div>
-                  <span className="text-sm font-bold text-gray-600 group-hover:text-green-800 transition-colors">Must Change Pwd</span>
+                  <span className="text-sm font-bold text-gray-600 group-hover:text-green-800 transition-colors">
+                    Must Change Pwd
+                  </span>
                 </label>
               </div>
             </div>

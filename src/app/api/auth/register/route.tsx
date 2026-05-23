@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
     );
 
     return NextResponse.json(response.data, { status: response.status });
-    // eslint-disable-next-line
   } catch (error: any) {
     if (isAxiosError(error)) {
       return NextResponse.json(

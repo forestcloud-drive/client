@@ -21,18 +21,17 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
-  const handleToast = useCallback((
-    message: string,
-    type: 'success' | 'error',
-    timeout = 3000,
-  ) => {
-    setToast({
-      message,
-      type,
-      id: Date.now(),
-      timeout,
-    });
-  }, []);
+  const handleToast = useCallback(
+    (message: string, type: 'success' | 'error', timeout = 3000) => {
+      setToast({
+        message,
+        type,
+        id: Date.now(),
+        timeout,
+      });
+    },
+    [],
+  );
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -55,21 +54,21 @@ export default function Home() {
       try {
         const res = await fetch('/api/users/profile', {
           headers: {
-            'Authorization': `Bearer ${token}`
-          }
+            Authorization: `Bearer ${token}`,
+          },
         });
 
         if (res.ok) {
           const data = await res.json();
           setHasAccess(data.hasAccess);
-          
+
           // If user has no access, force them to profile tab and show message
           if (!data.hasAccess) {
             setActiveTab('profile');
             handleToast(
               "Unfortunately you don't have access. Contact one of the administrators, or wait for the access",
               'error',
-              10000
+              10000,
             );
           }
         }

@@ -36,11 +36,15 @@ export async function PUT(req: NextRequest) {
     const authHeader = req.headers.get('Authorization');
     const body = await req.json();
 
-    const response = await axios.put(`${BACKEND_URL}/api/v1/users/profile`, body, {
-      headers: {
-        Authorization: authHeader || '',
+    const response = await axios.put(
+      `${BACKEND_URL}/api/v1/users/profile`,
+      body,
+      {
+        headers: {
+          Authorization: authHeader || '',
+        },
       },
-    });
+    );
 
     return NextResponse.json(response.data, { status: response.status });
   } catch (error: any) {
