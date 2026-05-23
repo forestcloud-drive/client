@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import clsx from 'clsx';
 
 interface UserProfile {
   userId: string;
@@ -64,7 +65,10 @@ export const ProfileView = ({
     <div className="max-w-2xl mx-auto w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="bg-white/40 backdrop-blur-xl border border-white/20 rounded-3xl p-8 shadow-2xl">
         <div className="flex items-center space-x-6 mb-8">
-          <div className="w-24 h-24 rounded-2xl bg-green-600 flex items-center justify-center text-white text-4xl font-bold shadow-lg shadow-green-200">
+          <div className={clsx(
+            "w-24 h-24 rounded-2xl bg-green-600 flex items-center justify-center text-white text-4xl font-bold shadow-lg shadow-green-200 shrink-0 transition-all duration-500",
+            !profile.hasAccess && "grayscale opacity-75 bg-gray-400"
+          )}>
             {profile.fullname[0]?.toUpperCase() || 'U'}
           </div>
           <div>

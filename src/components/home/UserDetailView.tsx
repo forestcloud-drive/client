@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { DeleteUserModal } from './DeleteUserModal';
 
 interface UserDetail {
   userId: string;
@@ -25,7 +26,38 @@ export const UserDetailView = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editFullname, setEditFullname] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
+  const performAction = async (action: string, body: any = {}) => {
+    setIsActionLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/admin/users/${userId}/${action}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUser(data);
+        onToast('Action successful', 'success');
+      } else {
+        const data = await res.json();
+        onToast(data.message || 'Action failed', 'error');
+      }
+    } catch (e) {
+      onToast('An error occurred', 'error');
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -91,6 +123,31 @@ export const UserDetailView = ({
       console.error(error);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsActionLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        onToast('User deleted successfully', 'success');
+        onBack();
+      } else {
+        const data = await res.json();
+        onToast(data.message || 'Failed to delete user', 'error');
+      }
+    } catch (e) {
+      onToast('An error occurred', 'error');
+    } finally {
+      setIsActionLoading(false);
+      setIsDeleteModalOpen(false);
     }
   };
 
@@ -225,45 +282,82 @@ export const UserDetailView = ({
 
           <div className="bg-white/50 p-6 rounded-2xl border border-white/30">
             <span className="text-xs text-gray-400 uppercase font-bold tracking-widest block mb-2">
-              Account Role
+              Access Control
             </span>
-            <div className="flex items-center space-x-2">
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-bold uppercase tracking-wide ${
-                  user.role === 'admin'
-                    ? 'bg-purple-100 text-purple-800'
-                    : 'bg-green-100 text-green-800'
-                }`}
-              >
-                {user.role}
-              </span>
-            </div>
+            <button
+              onClick={() => performAction(user.hasAccess ? 'restrict-access' : 'give-access')}
+              disabled={isActionLoading}
+              className={`w-full py-2 rounded-lg font-bold text-sm ${user.hasAccess ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
+            >
+              {user.hasAccess ? 'Restrict Access' : 'Give Access'}
+            </button>
+          </div>
+
+          <div className="bg-white/50 p-6 rounded-2xl border border-white/30 space-y-3">
+            <span className="text-xs text-gray-400 uppercase font-bold tracking-widest block">Role Management</span>
+            <select
+              value={user.role}
+              onChange={(e) => performAction('role', { role: e.target.value })}
+              className="w-full bg-white/50 border-2 border-gray-300 rounded-lg px-3 py-2 font-bold text-gray-900 text-sm focus:border-green-600 outline-none"
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
           </div>
 
           <div className="bg-white/50 p-6 rounded-2xl border border-white/30">
             <span className="text-xs text-gray-400 uppercase font-bold tracking-widest block mb-2">
-              Status
+              Danger Zone
             </span>
-            <div className="flex items-center space-x-2">
-              <div
-                className={`w-3 h-3 rounded-full ${user.hasAccess ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}
-              />
-              <span
-                className={`text-sm font-bold ${user.hasAccess ? 'text-green-700' : 'text-red-700'}`}
-              >
-                {user.hasAccess ? 'Access Granted' : 'Access Restricted'}
-              </span>
-            </div>
+            <button
+              onClick={() => setIsDeleteModalOpen(true)}
+              disabled={isActionLoading}
+              className="w-full py-2 bg-red-600 text-white rounded-lg font-bold text-sm hover:bg-red-700 transition-all disabled:opacity-50"
+            >
+              Delete User
+            </button>
           </div>
 
-          <div className="bg-white/50 p-6 rounded-2xl border border-white/30">
+          <DeleteUserModal 
+            isOpen={isDeleteModalOpen}
+            onClose={() => setIsDeleteModalOpen(false)}
+            onConfirm={handleDelete}
+            isLoading={isActionLoading}
+          />
+
+          <div className="bg-white/50 p-6 rounded-2xl border border-white/30 col-span-2">
             <span className="text-xs text-gray-400 uppercase font-bold tracking-widest block mb-2">
-              Data Protection
+              Reset Password
             </span>
-            <p className="text-sm text-gray-500 font-medium italic">
-              User data is managed according to the system&apos;s privacy
-              policy.
-            </p>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="New Password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full bg-white/50 border-2 border-gray-300 rounded-lg px-4 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:border-green-600 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2.5 text-gray-400 hover:text-green-600 transition-colors"
+                >
+                  {showPassword ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.97 9.97 0 012.38-3.468M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.31.96-1.042 2.05-2.074 3.01M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                  )}
+                </button>
+              </div>
+              <button
+                onClick={() => performAction('password', { newPassword })}
+                disabled={!newPassword || isActionLoading}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold text-sm hover:bg-green-700 disabled:opacity-50"
+              >
+                Set
+              </button>
+            </div>
           </div>
         </div>
 

@@ -40,6 +40,7 @@ export const LoginForm = ({
             onChange={(e) => setPassword(e.target.value)}
             isRequired={true}
             autoComplete="off"
+            showToggle={true}
           />
 
           <div className="flex justify-center">

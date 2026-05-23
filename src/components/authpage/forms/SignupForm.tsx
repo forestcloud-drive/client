@@ -52,6 +52,7 @@ export const SignupForm = ({
             onChange={(e) => setPassword(e.target.value)}
             isRequired={true}
             autoComplete="new-password"
+            showToggle={true}
           />
 
           <div className="flex justify-center">
