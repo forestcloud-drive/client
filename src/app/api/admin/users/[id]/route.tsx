@@ -30,7 +30,7 @@ export async function GET(req: NextRequest, { params }: RouteContext) {
   }
 }
 
-export async function POST(req: NextRequest, { params }: RouteContext) {
+export async function PUT(req: NextRequest, { params }: RouteContext) {
   try {
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest, { params }: RouteContext) {
     const body = await req.json();
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
     const response = await fetch(`${backendUrl}/api/v1/admin/users/${id}`, {
-      method: 'POST',
+      method: 'PUT',
       headers: {
         Authorization: authHeader,
         'Content-Type': 'application/json',

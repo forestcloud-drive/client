@@ -21,6 +21,18 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
+  useEffect(() => {
+    const savedTab = localStorage.getItem('activeTab') as TabType;
+    if (savedTab) {
+      setActiveTab(savedTab);
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('activeTab', activeTab);
+  }, [activeTab]);
+
+
   const handleToast = useCallback(
     (message: string, type: 'success' | 'error', timeout = 3000) => {
       setToast({

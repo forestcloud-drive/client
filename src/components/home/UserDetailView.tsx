@@ -66,7 +66,7 @@ export const UserDetailView = ({
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`/api/admin/users/${userId}`, {
-        method: 'POST',
+        method: 'PUT',
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',

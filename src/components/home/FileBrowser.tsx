@@ -26,9 +26,16 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   const [items, setItems] = useState<FileData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [pathStack, setPathStack] = useState<
-    { id: string | null; name: string }[]
-  >([{ id: null, name: 'Root' }]);
+  const [pathStack, setPathStack] = useState<{ id: string | null; name: string }[]>(
+    () => {
+      const saved = localStorage.getItem('pathStack');
+      return saved ? JSON.parse(saved) : [{ id: null, name: 'Root' }];
+    }
+  );
+
+  useEffect(() => {
+    localStorage.setItem('pathStack', JSON.stringify(pathStack));
+  }, [pathStack]);
 
   // Creation state
   const [isModalOpen, setIsModalOpen] = useState(false);
