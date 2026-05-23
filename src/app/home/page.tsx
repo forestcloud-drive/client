@@ -10,6 +10,7 @@ import { FileBrowser } from '@/components/home/FileBrowser';
 import { ProfileView } from '@/components/home/ProfileView';
 import { TrashBrowser } from '@/components/home/TrashBrowser';
 import { SettingsView } from '@/components/home/SettingsView';
+import { AdminView } from '@/components/home/AdminView';
 import { useCallback } from 'react';
 
 export default function Home() {
@@ -71,18 +72,9 @@ export default function Home() {
       case 'trash':
         return <TrashBrowser onToast={handleToast} />;
       case 'settings':
-        return <SettingsView onToast={handleToast} />;
+        return <SettingsView onToast={handleToast} onLogout={handleLogout} />;
       case 'administration':
-        return (
-          <div className={contentClasses}>
-            <h1 className="text-4xl font-extrabold mb-4 text-green-800">
-              Administration
-            </h1>
-            <p className="text-lg text-gray-600 max-w-md">
-              Manage users, roles, and system-wide configurations.
-            </p>
-          </div>
-        );
+        return <AdminView onToast={handleToast} />;
       default:
         return null;
     }

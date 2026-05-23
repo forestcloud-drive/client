@@ -25,6 +25,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<FileData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
   const [pathStack, setPathStack] = useState<
     { id: string | null; name: string }[]
   >([{ id: null, name: 'Root' }]);
@@ -64,7 +65,30 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
 
   const currentFolder = pathStack[pathStack.length - 1];
 
+  const handleSearch = async (title: string) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/files/search?title=${encodeURIComponent(title)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Handle both flat array and wrapped { files: [] } responses
+        const results = Array.isArray(data) ? data : (data.files || []);
+        setItems(results);
+      } else {
+        onToast('Failed to search', 'error');
+      }
+    } catch (error) {
+      onToast('An error occurred during search', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchContent = async (id: string | null) => {
+    if (searchQuery.trim()) return;
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
@@ -118,8 +142,15 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   };
 
   useEffect(() => {
-    fetchContent(currentFolder.id);
-  }, [currentFolder.id]);
+    if (searchQuery.trim()) {
+      const delayDebounceFn = setTimeout(() => {
+        handleSearch(searchQuery);
+      }, 500);
+      return () => clearTimeout(delayDebounceFn);
+    } else {
+      fetchContent(currentFolder.id);
+    }
+  }, [currentFolder.id, searchQuery]);
 
   useEffect(() => {
     if (isMoveModalOpen) {
@@ -130,6 +161,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
 
   const handleItemClick = (item: FileData) => {
     if (item.mimeType === 'text/directory') {
+      if (searchQuery) setSearchQuery('');
       setPathStack((prev) => [
         ...prev,
         { id: item.fileId, name: item.originalName },
@@ -471,7 +503,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
       />
 
       {/* Action Bar */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 space-x-4">
         <div className="flex items-center space-x-4">
           <button
             onClick={handleUploadClick}
@@ -493,56 +525,84 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
             Create Dir
           </button>
         </div>
-      </div>
 
-      {/* Path Breadcrumbs and Back Button */}
-      <div className="flex items-center space-x-2 mb-6 text-sm h-10">
-        <div className="flex items-center">
-          {pathStack.length > 1 && (
+        {/* Search Bar */}
+        <div className="flex-1 max-w-md relative">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            placeholder="Search files and folders..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 bg-white/50 border-2 border-white/30 rounded-xl focus:border-green-600 outline-none transition-all font-semibold text-green-900"
+          />
+          {searchQuery && (
             <button
-              onClick={handleBack}
-              className="p-2 rounded-full border-0 outline-none ring-0 hover:bg-green-100 text-green-700 transition-colors duration-200 cursor-pointer group mr-2 animate-in fade-in duration-300"
-              title="Go back"
+              onClick={() => setSearchQuery('')}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
             >
-              <svg
-                className="w-5 h-5 transition-transform group-hover:-translate-x-1"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10 19l-7-7m0 0l7-7m-7 7h18"
-                />
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
           )}
         </div>
-        <div className="flex items-center space-x-2 overflow-x-auto pb-1 custom-scrollbar flex-1">
-          {pathStack.map((folder, index) => (
-            <React.Fragment key={index}>
-              {index > 0 && (
-                <span className="text-gray-400 animate-in fade-in duration-500">
-                  /
-                </span>
-              )}
-              <button
-                onClick={() => navigateToStack(index)}
-                className={clsx(
-                  'px-2 py-1 rounded-md transition-all cursor-pointer whitespace-nowrap animate-in fade-in zoom-in duration-300',
-                  index === pathStack.length - 1
-                    ? 'bg-green-100 text-green-800 font-bold'
-                    : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700',
-                )}
-              >
-                {folder.name}
-              </button>
-            </React.Fragment>
-          ))}
-        </div>
       </div>
+
+      {/* Path Breadcrumbs and Back Button */}
+      {!searchQuery && (
+        <div className="flex items-center space-x-2 mb-6 text-sm h-10 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center">
+            {pathStack.length > 1 && (
+              <button
+                onClick={handleBack}
+                className="p-2 rounded-full border-0 outline-none ring-0 hover:bg-green-100 text-green-700 transition-colors duration-200 cursor-pointer group mr-2 animate-in fade-in duration-300"
+                title="Go back"
+              >
+                <svg
+                  className="w-5 h-5 transition-transform group-hover:-translate-x-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
+          <div className="flex items-center space-x-2 overflow-x-auto pb-1 custom-scrollbar flex-1">
+            {pathStack.map((folder, index) => (
+              <React.Fragment key={index}>
+                {index > 0 && (
+                  <span className="text-gray-400 animate-in fade-in duration-500">
+                    /
+                  </span>
+                )}
+                <button
+                  onClick={() => navigateToStack(index)}
+                  className={clsx(
+                    'px-2 py-1 rounded-md transition-all cursor-pointer whitespace-nowrap animate-in fade-in zoom-in duration-300',
+                    index === pathStack.length - 1
+                      ? 'bg-green-100 text-green-800 font-bold'
+                      : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700',
+                  )}
+                >
+                  {folder.name}
+                </button>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Modal for creating directory */}
       {isModalOpen && (
@@ -830,14 +890,31 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
           <div className="flex items-center justify-center h-full">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
           </div>
-        ) : items.length === 0 && pathStack.length <= 1 ? (
+        ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400">
-            <FolderIcon />
-            <p className="mt-4 text-lg font-medium">This folder is empty</p>
+            {searchQuery ? (
+              <>
+                <svg className="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <p className="text-lg font-medium">No files or folders found for "{searchQuery}"</p>
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="mt-4 text-green-600 font-bold hover:underline cursor-pointer"
+                >
+                  Clear search
+                </button>
+              </>
+            ) : (
+              <>
+                <FolderIcon />
+                <p className="mt-4 text-lg font-medium">This folder is empty</p>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 pb-10">
-            {pathStack.length > 1 && (
+            {pathStack.length > 1 && !searchQuery && (
               <div
                 onClick={handleBack}
                 className="group flex flex-col items-center p-4 rounded-2xl border-0 hover:bg-gray-100 transition-colors cursor-pointer active:scale-95"
@@ -862,7 +939,7 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
                 </span>
               </div>
             )}
-            {items.map((item) => (
+            {Array.isArray(items) && items.map((item) => (
               <div
                 key={item.fileId}
                 onClick={() => handleItemClick(item)}

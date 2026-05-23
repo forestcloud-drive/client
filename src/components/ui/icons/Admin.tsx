@@ -1,7 +1,11 @@
-export const AdminIcon = () => {
+interface AdminIconProps {
+  className?: string;
+}
+
+export const AdminIcon = ({ className = "w-6 h-6 mr-3" }: AdminIconProps) => {
   return (
     <svg
-      className="w-6 h-6 mr-3 flex-shrink-0"
+      className={`${className} flex-shrink-0`}
       fill="none"
       stroke="currentColor"
       strokeWidth={2}

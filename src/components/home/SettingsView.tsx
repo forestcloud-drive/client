@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 
 interface SettingsViewProps {
   onToast: (msg: string, type: 'success' | 'error') => void;
+  onLogout: () => void;
 }
 
-export const SettingsView = ({ onToast }: SettingsViewProps) => {
+export const SettingsView = ({ onToast, onLogout }: SettingsViewProps) => {
   const [fullname, setFullname] = useState('');
   const [email, setEmail] = useState('');
   const [oldPassword, setOldPassword] = useState('');
@@ -58,26 +59,6 @@ export const SettingsView = ({ onToast }: SettingsViewProps) => {
         const data = await res.json();
         setFullname(data.fullname);
         setEmail(data.email);
-
-        // Under the hood sign-in to get new token
-        const up = sessionStorage.getItem('up');
-        if (up) {
-          try {
-            const loginRes = await fetch('/api/auth/login', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email: data.email, password: up })
-            });
-            if (loginRes.ok) {
-              const loginData = await loginRes.json();
-              localStorage.setItem('token', loginData.auth_token);
-              localStorage.setItem('role', loginData.user.role);
-            }
-          } catch (e) {
-            console.error('Silent login failed', e);
-          }
-        }
-
         onToast('Profile updated successfully', 'success');
       } else {
         const data = await res.json();
@@ -110,10 +91,10 @@ export const SettingsView = ({ onToast }: SettingsViewProps) => {
       });
 
       if (res.ok) {
-        onToast('Password changed successfully', 'success');
-        setOldPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
+        onToast('Password changed successfully. Please login again.', 'success');
+        setTimeout(() => {
+          onLogout();
+        }, 1500);
       } else {
         const data = await res.json();
         onToast(data.message || 'Failed to change password', 'error');
