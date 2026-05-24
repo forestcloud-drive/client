@@ -39,7 +39,7 @@ export const UserDetailView = ({
       const res = await fetch(`/api/admin/users/${userId}/${action}`, {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
@@ -133,8 +133,8 @@ export const UserDetailView = ({
       const res = await fetch(`/api/admin/users/${userId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (res.ok) {
         onToast('User deleted successfully', 'success');
@@ -285,7 +285,11 @@ export const UserDetailView = ({
               Access Control
             </span>
             <button
-              onClick={() => performAction(user.hasAccess ? 'restrict-access' : 'give-access')}
+              onClick={() =>
+                performAction(
+                  user.hasAccess ? 'restrict-access' : 'give-access',
+                )
+              }
               disabled={isActionLoading}
               className={`w-full py-2 rounded-lg font-bold text-sm ${user.hasAccess ? 'bg-red-100 text-red-700 hover:bg-red-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
             >
@@ -294,7 +298,9 @@ export const UserDetailView = ({
           </div>
 
           <div className="bg-white/50 p-6 rounded-2xl border border-white/30 space-y-3">
-            <span className="text-xs text-gray-400 uppercase font-bold tracking-widest block">Role Management</span>
+            <span className="text-xs text-gray-400 uppercase font-bold tracking-widest block">
+              Role Management
+            </span>
             <select
               value={user.role}
               onChange={(e) => performAction('role', { role: e.target.value })}
@@ -318,7 +324,7 @@ export const UserDetailView = ({
             </button>
           </div>
 
-          <DeleteUserModal 
+          <DeleteUserModal
             isOpen={isDeleteModalOpen}
             onClose={() => setIsDeleteModalOpen(false)}
             onConfirm={handleDelete}
@@ -344,9 +350,39 @@ export const UserDetailView = ({
                   className="absolute right-3 top-2.5 text-gray-400 hover:text-green-600 transition-colors"
                 >
                   {showPassword ? (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.97 9.97 0 012.38-3.468M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.477 0-8.268-2.943-9.542-7a9.97 9.97 0 012.38-3.468M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
                   ) : (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.31.96-1.042 2.05-2.074 3.01M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.31.96-1.042 2.05-2.074 3.01M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
+                    </svg>
                   )}
                 </button>
               </div>

@@ -7,6 +7,7 @@ import { Toast, ToastStateProps } from '@/components/ui/Toast';
 import { SearchParamHandler } from './SeatchParamHandler';
 import { Sidebar, TabType } from '@/components/home/Sidebar';
 import { FileBrowser } from '@/components/home/FileBrowser';
+import { SharedBrowser } from '@/components/home/SharedBrowser';
 import { ProfileView } from '@/components/home/ProfileView';
 import { TrashBrowser } from '@/components/home/TrashBrowser';
 import { SettingsView } from '@/components/home/SettingsView';
@@ -31,7 +32,6 @@ export default function Home() {
   useEffect(() => {
     localStorage.setItem('activeTab', activeTab);
   }, [activeTab]);
-
 
   const handleToast = useCallback(
     (message: string, type: 'success' | 'error', timeout = 3000) => {
@@ -116,16 +116,7 @@ export default function Home() {
       case 'profile':
         return <ProfileView onToast={handleToast} onNavigate={setActiveTab} />;
       case 'shared':
-        return (
-          <div className={contentClasses}>
-            <h1 className="text-4xl font-extrabold mb-4 text-green-800">
-              Shared with Me
-            </h1>
-            <p className="text-lg text-gray-600 max-w-md">
-              Collaborate on documents and folders shared by your team.
-            </p>
-          </div>
-        );
+        return <SharedBrowser onToast={handleToast} />;
       case 'trash':
         return <TrashBrowser onToast={handleToast} />;
       case 'settings':

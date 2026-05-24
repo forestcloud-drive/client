@@ -6,6 +6,8 @@ import { PlusIcon } from '@/components/ui/icons/Plus';
 import { TrashIconMenu } from '@/components/ui/icons/TrashMenu';
 import { MoveIcon } from '@/components/ui/icons/Move';
 import { DownloadIcon } from '@/components/ui/icons/Download';
+import { ShareModal } from './ShareModal';
+import { SharedIcon } from '@/components/ui/icons/Shared';
 import clsx from 'clsx';
 
 interface FileData {
@@ -26,12 +28,12 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   const [items, setItems] = useState<FileData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [pathStack, setPathStack] = useState<{ id: string | null; name: string }[]>(
-    () => {
-      const saved = localStorage.getItem('pathStack');
-      return saved ? JSON.parse(saved) : [{ id: null, name: 'Root' }];
-    }
-  );
+  const [pathStack, setPathStack] = useState<
+    { id: string | null; name: string }[]
+  >(() => {
+    const saved = localStorage.getItem('pathStack');
+    return saved ? JSON.parse(saved) : [{ id: null, name: 'Root' }];
+  });
 
   useEffect(() => {
     localStorage.setItem('pathStack', JSON.stringify(pathStack));
@@ -47,6 +49,11 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
   const [renameValue, setRenameValue] = useState('');
   const [isRenaming, setIsRenaming] = useState(false);
   const [renamingItem, setRenamingItem] = useState<FileData | null>(null);
+
+  // Sharing state
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [sharingItem, setSharingItem] = useState<FileData | null>(null);
 
   // Upload state
   const [isUploading, setIsUploading] = useState(false);
@@ -320,6 +327,46 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
       onToast('An error occurred during move', 'error');
     } finally {
       setIsMoving(false);
+    }
+  };
+
+  const handleShareClick = () => {
+    if (!contextMenu) return;
+    setSharingItem(contextMenu.item);
+    setIsShareModalOpen(true);
+    setContextMenu(null);
+  };
+
+  const handleShareSubmit = async (userIds: string[]) => {
+    if (!sharingItem || isSharing) return;
+
+    setIsSharing(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/shared', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileId: sharingItem.fileId,
+          userIds: userIds,
+        }),
+      });
+
+      if (res.ok) {
+        onToast('Shared successfully', 'success');
+        setIsShareModalOpen(false);
+        setSharingItem(null);
+      } else {
+        const data = await res.json();
+        onToast(data.message || 'Failed to share', 'error');
+      }
+    } catch (error) {
+      onToast('An error occurred during sharing', 'error');
+    } finally {
+      setIsSharing(false);
     }
   };
 
@@ -707,6 +754,15 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
             </button>
           )}
 
+          {/* Share Action */}
+          <button
+            onClick={handleShareClick}
+            className="w-full flex items-center px-4 py-3 text-sm font-semibold text-green-700 hover:bg-green-50/50 transition-colors cursor-pointer"
+          >
+            <SharedIcon />
+            Share
+          </button>
+
           {/* Move Action */}
           <button
             onClick={handleMoveClick}
@@ -1008,6 +1064,17 @@ export const FileBrowser = ({ onToast }: FileBrowserProps) => {
           </div>
         )}
       </div>
+
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => {
+          setIsShareModalOpen(false);
+          setSharingItem(null);
+        }}
+        onShare={handleShareSubmit}
+        isLoading={isSharing}
+        itemTitle={sharingItem?.originalName || ''}
+      />
     </div>
   );
 };

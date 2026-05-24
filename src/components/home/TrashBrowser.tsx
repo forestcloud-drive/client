@@ -20,12 +20,12 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<FileData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pathStack, setPathStack] = useState<{ id: string | null; name: string }[]>(
-    () => {
-      const saved = localStorage.getItem('trashPathStack');
-      return saved ? JSON.parse(saved) : [{ id: null, name: 'Trash' }];
-    }
-  );
+  const [pathStack, setPathStack] = useState<
+    { id: string | null; name: string }[]
+  >(() => {
+    const saved = localStorage.getItem('trashPathStack');
+    return saved ? JSON.parse(saved) : [{ id: null, name: 'Trash' }];
+  });
 
   useEffect(() => {
     localStorage.setItem('trashPathStack', JSON.stringify(pathStack));

@@ -1,8 +1,12 @@
 import React from 'react';
 
-export const DownloadIcon = () => (
+export const DownloadIcon = ({
+  className = 'w-4 h-4 mr-3',
+}: {
+  className?: string;
+}) => (
   <svg
-    className="w-4 h-4 mr-3"
+    className={className}
     fill="none"
     stroke="currentColor"
     viewBox="0 0 24 24"
