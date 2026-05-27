@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -p 7180",
     "lint": "next lint",
     "fmt": "prettier src --write",
     "fmt:check": "prettier src -c"

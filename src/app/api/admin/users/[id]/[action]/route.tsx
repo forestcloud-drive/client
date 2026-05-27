@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string; action: string } },
+  { params }: { params: Promise<{ id: string; action: string }> },
 ) {
   try {
     const authHeader = req.headers.get('Authorization');
@@ -10,7 +10,7 @@ export async function PUT(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id, action } = params;
+    const { id, action } = await params;
     const body = await req.json();
     const backendUrl = process.env.BACKEND_URL || 'http://localhost:3000';
 

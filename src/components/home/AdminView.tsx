@@ -66,7 +66,7 @@ export const AdminView = ({ onToast }: AdminViewProps) => {
   }, [onToast]);
 
   const sortedUsers = React.useMemo(() => {
-    let sortableUsers = [...users];
+    const sortableUsers = [...users];
     if (sortConfig !== null) {
       sortableUsers.sort((a, b) => {
         const aVal = a[sortConfig.key];
