@@ -27,12 +27,17 @@ export const Toast = ({
   const [visible, setVisible] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const handleClose = () => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setVisible(false);
+    setTimeout(onClose, 300);
+  };
+
   useEffect(() => {
     const showTimer = setTimeout(() => setVisible(true), 10);
 
     timerRef.current = setTimeout(() => {
-      setVisible(false);
-      setTimeout(onClose, 300);
+      handleClose();
     }, timeout);
 
     return () => {
@@ -50,8 +55,9 @@ export const Toast = ({
 
   return (
     <div
+      onClick={handleClose}
       className={clsx(
-        'fixed top-8 left-1/2 transform -translate-x-1/2 z-50 flex items-center max-w-xl w-[90vw] rounded-lg shadow-lg px-6 py-4 transition-all duration-300',
+        'fixed top-8 left-1/2 transform -translate-x-1/2 z-50 flex items-center max-w-xl w-[90vw] rounded-lg shadow-lg px-6 py-4 transition-all duration-300 cursor-pointer hover:scale-105 hover:bg-white/60',
         'text-gray-600 text-lg font-semibold bg-white/50',
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-6',
       )}

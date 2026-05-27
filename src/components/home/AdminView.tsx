@@ -3,6 +3,7 @@ import { AdminIcon } from '@/components/ui/icons/Admin';
 import { UserDetailView } from './UserDetailView';
 import { AddUserModal } from './AddUserModal';
 import { PlusIcon } from '@/components/ui/icons/Plus';
+import clsx from 'clsx';
 
 interface User {
   userId: string;
@@ -22,6 +23,11 @@ export const AdminView = ({ onToast }: AdminViewProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [sortConfig, setSortConfig] = useState<{
+    key: keyof User;
+    direction: 'asc' | 'desc';
+  } | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -45,8 +51,49 @@ export const AdminView = ({ onToast }: AdminViewProps) => {
   };
 
   useEffect(() => {
+    const fetchCurrentProfile = async () => {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/users/profile', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setCurrentUserId(data.userId);
+      }
+    };
+    fetchCurrentProfile();
     fetchUsers();
   }, [onToast]);
+
+  const sortedUsers = React.useMemo(() => {
+    const sortableUsers = [...users];
+    if (sortConfig !== null) {
+      sortableUsers.sort((a, b) => {
+        const aVal = a[sortConfig.key];
+        const bVal = b[sortConfig.key];
+        if (aVal! < bVal!) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aVal! > bVal!) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableUsers;
+  }, [users, sortConfig]);
+
+  const requestSort = (key: keyof User) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === 'asc'
+    ) {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
 
   if (isLoading) {
     return (
@@ -60,7 +107,10 @@ export const AdminView = ({ onToast }: AdminViewProps) => {
     return (
       <UserDetailView
         userId={selectedUserId}
-        onBack={() => setSelectedUserId(null)}
+        onBack={() => {
+          setSelectedUserId(null);
+          fetchUsers();
+        }}
         onToast={onToast}
       />
     );
@@ -92,14 +142,38 @@ export const AdminView = ({ onToast }: AdminViewProps) => {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-white/50 border-b border-white/20">
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">
-                  User
+                <th
+                  className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest cursor-pointer hover:text-green-700"
+                  onClick={() => requestSort('fullname')}
+                >
+                  User{' '}
+                  {sortConfig?.key === 'fullname'
+                    ? sortConfig.direction === 'asc'
+                      ? '↑'
+                      : '↓'
+                    : ''}
                 </th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">
-                  Role
+                <th
+                  className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest cursor-pointer hover:text-green-700"
+                  onClick={() => requestSort('role')}
+                >
+                  Role{' '}
+                  {sortConfig?.key === 'role'
+                    ? sortConfig.direction === 'asc'
+                      ? '↑'
+                      : '↓'
+                    : ''}
                 </th>
-                <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest">
-                  Status
+                <th
+                  className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest cursor-pointer hover:text-green-700"
+                  onClick={() => requestSort('hasAccess')}
+                >
+                  Status{' '}
+                  {sortConfig?.key === 'hasAccess'
+                    ? sortConfig.direction === 'asc'
+                      ? '↑'
+                      : '↓'
+                    : ''}
                 </th>
                 <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">
                   ID
@@ -107,63 +181,88 @@ export const AdminView = ({ onToast }: AdminViewProps) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/10">
-              {users.map((user) => (
-                <tr
-                  key={user.userId}
-                  className="hover:bg-white/30 transition-colors cursor-pointer group/row"
-                  onClick={() => setSelectedUserId(user.userId)}
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700 font-bold mr-3 shadow-inner">
-                        {user.fullname.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <div className="font-bold text-green-900">
-                          {user.fullname}
+              {sortedUsers.map((user) => {
+                const isAdmin = user.userId === currentUserId;
+                return (
+                  <tr
+                    key={user.userId}
+                    className={clsx(
+                      'transition-colors group/row',
+                      isAdmin
+                        ? 'bg-green-50'
+                        : 'hover:bg-white/30 cursor-pointer',
+                    )}
+                    onClick={() => !isAdmin && setSelectedUserId(user.userId)}
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center">
+                        <div
+                          className={clsx(
+                            'w-10 h-10 rounded-full flex items-center justify-center font-bold mr-3 shadow-inner',
+                            isAdmin
+                              ? 'bg-green-600 text-white'
+                              : 'bg-green-100 text-green-700',
+                          )}
+                        >
+                          {user.fullname.charAt(0).toUpperCase()}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {user.email}
+                        <div>
+                          <div
+                            className={clsx(
+                              'font-bold flex items-center',
+                              isAdmin ? 'text-green-700' : 'text-green-900',
+                            )}
+                          >
+                            <span>{user.fullname}</span>
+                            {isAdmin && (
+                              <span className="text-[9px] ml-2 bg-green-600 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-wider leading-none shadow-sm">
+                                You
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {user.email}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-tighter ${
-                        user.role === 'admin'
-                          ? 'bg-purple-100 text-purple-700 border border-purple-200'
-                          : 'bg-blue-100 text-blue-700 border border-blue-200'
-                      }`}
-                    >
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      {user.deletedAt ? (
-                        <span className="flex items-center text-red-600 font-bold text-sm">
-                          <span className="w-2 h-2 bg-red-600 rounded-full mr-2"></span>
-                          Deleted
-                        </span>
-                      ) : user.hasAccess ? (
-                        <span className="flex items-center text-green-600 font-bold text-sm">
-                          <span className="w-2 h-2 bg-green-600 rounded-full mr-2 animate-pulse"></span>
-                          Active
-                        </span>
-                      ) : (
-                        <span className="flex items-center text-yellow-600 font-bold text-sm">
-                          <span className="w-2 h-2 bg-yellow-600 rounded-full mr-2"></span>
-                          Suspended
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-right font-mono text-[10px] text-gray-400 select-all">
-                    {user.userId}
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`px-3 py-1 rounded-lg text-xs font-black uppercase tracking-tighter ${
+                          user.role === 'admin'
+                            ? 'bg-purple-100 text-purple-700 border border-purple-200'
+                            : 'bg-blue-100 text-blue-700 border border-blue-200'
+                        }`}
+                      >
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center">
+                        {user.deletedAt ? (
+                          <span className="flex items-center text-red-600 font-bold text-sm">
+                            <span className="w-2 h-2 bg-red-600 rounded-full mr-2"></span>
+                            Deleted
+                          </span>
+                        ) : user.hasAccess ? (
+                          <span className="flex items-center text-green-600 font-bold text-sm">
+                            <span className="w-2 h-2 bg-green-600 rounded-full mr-2 animate-pulse"></span>
+                            Active
+                          </span>
+                        ) : (
+                          <span className="flex items-center text-yellow-600 font-bold text-sm">
+                            <span className="w-2 h-2 bg-yellow-600 rounded-full mr-2"></span>
+                            Suspended
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-right font-mono text-[10px] text-gray-400 select-all">
+                      {user.userId}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

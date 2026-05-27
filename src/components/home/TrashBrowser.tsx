@@ -22,7 +22,14 @@ export const TrashBrowser = ({ onToast }: TrashBrowserProps) => {
   const [loading, setLoading] = useState(true);
   const [pathStack, setPathStack] = useState<
     { id: string | null; name: string }[]
-  >([{ id: null, name: 'Trash' }]);
+  >(() => {
+    const saved = localStorage.getItem('trashPathStack');
+    return saved ? JSON.parse(saved) : [{ id: null, name: 'Trash' }];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('trashPathStack', JSON.stringify(pathStack));
+  }, [pathStack]);
 
   const [contextMenu, setContextMenu] = useState<{
     x: number;
